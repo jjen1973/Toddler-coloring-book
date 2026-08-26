@@ -929,6 +929,7 @@ svg {
   position: absolute;
   z-index: 1;
   inset: 0;
+  clip-path: polygon(5% 30%, 34% 30%, 34% 93%, 5% 93%);
   animation: grandma-wave-frames 1.4s steps(1, end) both;
   pointer-events: none;
 }
@@ -937,6 +938,7 @@ svg {
   position: absolute;
   z-index: 1;
   inset: 0;
+  clip-path: polygon(51% 4%, 73% 4%, 73% 44%, 51% 44%);
   animation: macaw-fluff-frames 1.4s steps(1, end) both;
   pointer-events: none;
 }
@@ -970,19 +972,46 @@ svg {
   78% { transform: translate(0.25%, -0.1%) rotate(0.35deg); }
 }
 
-.rabbit-hotspot {
+.follow-hotspot {
   position: absolute;
-  left: 61%;
-  top: 68%;
-  width: 22%;
-  height: 26%;
   padding: 0;
   border: 0;
-  border-radius: 48% 48% 42% 42%;
   background: transparent;
   cursor: pointer;
   touch-action: manipulation;
   transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.rabbit-hotspot {
+  left: 62.5%;
+  top: 69%;
+  width: 12%;
+  height: 23%;
+  border-radius: 48% 48% 42% 42%;
+}
+
+.rabbit-hole-hotspot {
+  left: 64.5%;
+  top: 72.5%;
+  width: 17%;
+  height: 9.5%;
+  border-radius: 48%;
+}
+
+.follow-hotspot:disabled {
+  cursor: default;
+}
+
+.rabbit-runner {
+  position: absolute;
+  z-index: 3;
+  left: 62.5%;
+  top: 69%;
+  width: 12%;
+  height: auto;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  animation: rabbit-run-into-hole 1.05s ease-in both;
 }
 
 .character-hotspot {
@@ -996,8 +1025,12 @@ svg {
   transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
+.character-hotspot:disabled {
+  cursor: default;
+}
+
 .character-hotspot:hover,
-.rabbit-hotspot:hover:not(:disabled) {
+.follow-hotspot:hover:not(:disabled) {
   background: rgba(255, 238, 82, 0.16);
   box-shadow:
     inset 0 0 0 5px rgba(255, 238, 82, 0.72),
@@ -1095,13 +1128,22 @@ svg {
   animation: rabbit-ring 1.35s ease-in-out infinite;
 }
 
-.rabbit-hotspot:focus-visible {
+.follow-hotspot:focus-visible {
   outline: 7px solid #7b45c4;
   outline-offset: 4px;
 }
 
 .following .rabbit-hotspot {
   animation: rabbit-wiggle 0.52s ease-in-out 2;
+}
+
+.following .rabbit-hole-hotspot {
+  animation: rabbit-ring 0.7s ease-in-out 2;
+}
+
+.rabbit-at-hole .rabbit-hole-hotspot {
+  cursor: pointer;
+  animation: hole-ready 0.85s ease-in-out infinite;
 }
 
 .following .hotspot-ring {
@@ -1134,6 +1176,21 @@ svg {
 
 @keyframes rabbit-ring {
   50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes rabbit-run-into-hole {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  10% { transform: translate(0, 0) scaleX(0.15) scaleY(1); }
+  20% { transform: translate(0, 0) scaleX(-1) scaleY(1); }
+  38% { transform: translate(12%, -15%) scaleX(-0.9) scaleY(0.9) rotate(4deg); }
+  56% { transform: translate(24%, 0) scaleX(-0.72) scaleY(0.72) rotate(-3deg); }
+  74% { transform: translate(34%, -9%) scaleX(-0.5) scaleY(0.5) rotate(3deg); }
+  88% { transform: translate(40%, 0) scaleX(-0.28) scaleY(0.28); opacity: 1; }
+  100% { transform: translate(43%, -1%) scaleX(-0.06) scaleY(0.06); opacity: 0; }
+}
+
+@keyframes hole-ready {
+  50% { transform: scale(1.08); }
 }
 
 @keyframes rabbit-wiggle {

@@ -489,10 +489,11 @@ function ColoringBook({ onExit }) {
 }
 
 function StartPage({ onEnterTunnel }) {
-  const [following, setFollowing] = useState(false);
+  const [rabbitStage, setRabbitStage] = useState('waiting');
   const [reaction, setReaction] = useState(null);
   const reactionTimeoutRef = useRef(null);
   const macawAudioRef = useRef(null);
+  const grandmaVoicesRef = useRef([]);
 
   useEffect(() => () => window.clearTimeout(reactionTimeoutRef.current), []);
 
@@ -507,6 +508,20 @@ function StartPage({ onEnterTunnel }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!('speechSynthesis' in window)) {
+      return undefined;
+    }
+
+    const loadGrandmaVoices = () => {
+      grandmaVoicesRef.current = window.speechSynthesis.getVoices();
+    };
+
+    loadGrandmaVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadGrandmaVoices);
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', loadGrandmaVoices);
+  }, []);
+
   const showReaction = (name) => {
     window.clearTimeout(reactionTimeoutRef.current);
     setReaction(name);
@@ -517,17 +532,36 @@ function StartPage({ onEnterTunnel }) {
     showReaction('grandma');
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const greeting = new SpeechSynthesisUtterance('Hello!');
-      const voices = window.speechSynthesis.getVoices();
-      const preferredFemaleVoice = voices.find((voice) => (
-        /^en/i.test(voice.lang)
-        && /zira|samantha|victoria|karen|moira|susan|hazel|aria|jenny|ava|serena|tessa|female/i.test(voice.name)
-      ));
-      const englishFallback = voices.find((voice) => /^en/i.test(voice.lang));
-      greeting.voice = preferredFemaleVoice || englishFallback || null;
-      greeting.rate = 0.82;
-      greeting.pitch = 1.08;
-      window.speechSynthesis.speak(greeting);
+      const speakHello = () => {
+        const voices = grandmaVoicesRef.current.length
+          ? grandmaVoicesRef.current
+          : window.speechSynthesis.getVoices();
+        if (!voices.length) {
+          return false;
+        }
+
+        const greeting = new SpeechSynthesisUtterance('Hello!');
+        const preferredFemaleVoice = voices.find((voice) => (
+          /^en/i.test(voice.lang)
+          && /zira|samantha|victoria|karen|moira|susan|hazel|aria|jenny|ava|serena|tessa|emma|sonia|libby|natasha|michelle|nicole|joanna|salli|female/i.test(voice.name)
+        ));
+        if (!preferredFemaleVoice) {
+          return false;
+        }
+        greeting.voice = preferredFemaleVoice;
+        greeting.rate = 0.82;
+        greeting.pitch = 1.08;
+        window.speechSynthesis.speak(greeting);
+        return true;
+      };
+
+      if (!speakHello()) {
+        const speakWhenReady = () => {
+          grandmaVoicesRef.current = window.speechSynthesis.getVoices();
+          speakHello();
+        };
+        window.speechSynthesis.addEventListener('voiceschanged', speakWhenReady, { once: true });
+      }
     }
   };
 
@@ -584,22 +618,32 @@ function StartPage({ onEnterTunnel }) {
   };
 
   useEffect(() => {
-    if (!following) {
+    if (rabbitStage !== 'hopping') {
       return undefined;
     }
 
-    const timeoutId = window.setTimeout(onEnterTunnel, 1050);
+    const timeoutId = window.setTimeout(() => setRabbitStage('at-hole'), 1050);
     return () => window.clearTimeout(timeoutId);
-  }, [following, onEnterTunnel]);
+  }, [rabbitStage]);
 
   return (
-    <main className={`start-page ${following ? 'following' : ''}`}>
+    <main className={`start-page ${rabbitStage === 'hopping' ? 'following' : ''} ${rabbitStage === 'at-hole' ? 'rabbit-at-hole' : ''}`}>
       <section className="start-scene" aria-label="Grandma, a macaw, and a rabbit beside a rabbit hole">
         <img
           className="start-scene-art"
-          src="/pages/start-page/rabbit-hole-start-grandma-rest.png"
+          src={rabbitStage === 'waiting'
+            ? '/pages/start-page/rabbit-hole-start-grandma-rest.png'
+            : '/pages/start-page/rabbit-hole-start-empty-hole.png'}
           alt="Grandma standing beside a tree with a macaw, while a white rabbit waits beside its rabbit hole"
         />
+        {rabbitStage === 'hopping' ? (
+          <img
+            className="rabbit-runner"
+            src="/pages/start-page/rabbit-runner.png"
+            alt=""
+            aria-hidden="true"
+          />
+        ) : null}
         {reaction === 'grandma' ? (
           <img
             className="start-scene-art grandma-wave-scene"
@@ -629,16 +673,28 @@ function StartPage({ onEnterTunnel }) {
         <button type="button" className="character-hotspot macaw-hotspot" onClick={squawkFromMacaw} aria-label="Tap the macaw to hear it squawk" />
         <button
           type="button"
-          className="rabbit-hotspot"
-          onClick={() => setFollowing(true)}
-          disabled={following}
-          aria-label="Follow the rabbit into the rabbit hole"
+          className="follow-hotspot rabbit-hotspot"
+          onClick={() => {
+            setReaction(null);
+            setRabbitStage('hopping');
+          }}
+          disabled={rabbitStage !== 'waiting'}
+          aria-label="Tap the rabbit to follow it"
         >
-          <span className="hotspot-ring" aria-hidden="true" />
+          {rabbitStage === 'waiting' ? <span className="hotspot-ring" aria-hidden="true" /> : null}
         </button>
-        <div className="follow-rabbit-message" aria-live="polite">
-          {following ? 'Follow the Rabbit!' : 'Tap the rabbit!'}
-        </div>
+        <button
+          type="button"
+          className="follow-hotspot rabbit-hole-hotspot"
+          onClick={onEnterTunnel}
+          disabled={rabbitStage !== 'at-hole'}
+          aria-label="Enter the rabbit hole"
+        >
+          {rabbitStage === 'at-hole' ? <span className="hotspot-ring" aria-hidden="true" /> : null}
+        </button>
+        {rabbitStage !== 'waiting' ? (
+          <div className="follow-rabbit-message" aria-live="polite">Follow the Rabbit!</div>
+        ) : null}
         {reaction === 'grandma' ? <div className="scene-reaction grandma-reaction">Hello!</div> : null}
         {reaction === 'macaw' ? <div className="scene-reaction macaw-reaction">SQUAWK!</div> : null}
       </section>
