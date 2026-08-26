@@ -211,14 +211,6 @@ svg {
   object-fit: contain;
 }
 
-.page-description {
-  position: relative;
-  z-index: 1;
-  margin: 14px 4px 0;
-  color: #61453d;
-  font-size: 1rem;
-}
-
 .blank-page {
   position: relative;
   z-index: 1;
@@ -271,13 +263,9 @@ svg {
   z-index: 3;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
   margin-top: 12px;
-}
-
-.page-footer .page-description {
-  margin: 0 4px;
 }
 
 .reset-page-button {
@@ -289,6 +277,34 @@ svg {
   color: #6b4a3b;
   font-size: 0.74rem;
   font-weight: 850;
+}
+
+.page-eraser-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 2px solid rgba(107, 74, 59, 0.24);
+  border-radius: 999px;
+  background: #fff;
+  color: #6b4a3b;
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.page-eraser-button:hover,
+.page-eraser-button.held {
+  background: #ffd5dc;
+  transform: translateY(-2px);
+}
+
+.eraser-icon {
+  width: 22px;
+  height: 12px;
+  border: 2px solid #97485b;
+  border-radius: 4px 7px 7px 4px;
+  background: linear-gradient(90deg, #f17a99 0 68%, #f8d7df 68%);
+  transform: rotate(-18deg);
 }
 
 .reset-page-button:hover:not(:disabled) {
@@ -592,9 +608,38 @@ svg {
   font-size: 0.48rem;
 }
 
-.holding-crayon .book-spread,
-.holding-crayon .book-spread * {
+.holding-tool .book-spread,
+.holding-tool .book-spread * {
   cursor: none;
+}
+
+.held-eraser {
+  position: fixed;
+  z-index: 1000;
+  width: 58px;
+  height: 30px;
+  border: 3px solid #97485b;
+  border-radius: 7px 13px 13px 7px;
+  background:
+    linear-gradient(90deg, transparent 0 68%, rgba(255, 255, 255, 0.55) 68%),
+    #f17a99;
+  box-shadow: inset 0 5px 4px rgba(255, 255, 255, 0.28), 7px 10px 10px rgba(67, 39, 28, 0.26);
+  transform: translate(-12%, -50%) rotate(-24deg);
+  transform-origin: 12% 50%;
+  pointer-events: none;
+  animation: eraser-pick-up 0.18s ease-out;
+}
+
+@keyframes eraser-pick-up {
+  from {
+    opacity: 0;
+    transform: translate(-12%, -50%) rotate(-8deg) scale(0.65);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-12%, -50%) rotate(-24deg) scale(1);
+  }
 }
 
 @keyframes pick-up-crayon {

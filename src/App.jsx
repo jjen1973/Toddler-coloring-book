@@ -90,9 +90,10 @@ function ColoringCanvas({ color, strokes, onStrokeComplete }) {
 
     const points = stroke.points.map((point) => ({ x: point.x * width, y: point.y * height }));
     context.save();
-    context.strokeStyle = stroke.color;
-    context.fillStyle = stroke.color;
-    context.lineWidth = Math.max(7, Math.min(width, height) * 0.035);
+    context.globalCompositeOperation = stroke.erase ? 'destination-out' : 'source-over';
+    context.strokeStyle = stroke.erase ? '#000' : stroke.color;
+    context.fillStyle = stroke.erase ? '#000' : stroke.color;
+    context.lineWidth = Math.max(stroke.erase ? 16 : 7, Math.min(width, height) * (stroke.erase ? 0.075 : 0.035));
     context.lineCap = 'round';
     context.lineJoin = 'round';
     context.globalAlpha = 0.72;
@@ -147,7 +148,7 @@ function ColoringCanvas({ color, strokes, onStrokeComplete }) {
     }
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
-    currentStrokeRef.current = { color, points: [pointFromEvent(event)] };
+    currentStrokeRef.current = { color: color === 'eraser' ? null : color, erase: color === 'eraser', points: [pointFromEvent(event)] };
   };
 
   const continueDrawing = (event) => {
@@ -161,7 +162,7 @@ function ColoringCanvas({ color, strokes, onStrokeComplete }) {
     const rectangle = canvas.getBoundingClientRect();
     const context = canvas.getContext('2d');
     const previousPoint = stroke.points[stroke.points.length - 1];
-    drawStroke(context, { color: stroke.color, points: [previousPoint, nextPoint] }, rectangle.width, rectangle.height);
+    drawStroke(context, { color: stroke.color, erase: stroke.erase, points: [previousPoint, nextPoint] }, rectangle.width, rectangle.height);
     stroke.points.push(nextPoint);
   };
 
@@ -197,7 +198,7 @@ function PageArtwork({ page, crayonColor, strokes = [], onStrokeComplete }) {
   );
 }
 
-function PageFace({ page, side, blank, crayonColor, strokes, onStrokeComplete, onResetPage, onResetColoring, onRestartBook, hasColoring }) {
+function PageFace({ page, side, blank, drawingTool, strokes, onStrokeComplete, onPickUpEraser, eraserHeld, onResetPage, onResetColoring, onRestartBook, hasColoring }) {
   if (blank) {
     return (
       <article className={`page-sheet ${side} blank`}>
@@ -228,7 +229,7 @@ function PageFace({ page, side, blank, crayonColor, strokes, onStrokeComplete, o
 
   return (
     <article className={`page-sheet ${side}`} style={{ '--page-accent': page.accent }}>
-      {strokes?.length ? (
+      {strokes?.some((stroke) => !stroke.erase) ? (
         <span className="page-complete-star" role="img" aria-label={`Letter ${page.letter} page colored`}>
           ★
         </span>
@@ -237,9 +238,18 @@ function PageFace({ page, side, blank, crayonColor, strokes, onStrokeComplete, o
         <span>Letter {page.letter}</span>
         <span>{page.title}</span>
       </div>
-      <PageArtwork page={page} crayonColor={crayonColor} strokes={strokes} onStrokeComplete={onStrokeComplete} />
+      <PageArtwork page={page} crayonColor={drawingTool} strokes={strokes} onStrokeComplete={onStrokeComplete} />
       <div className="page-footer">
-        <p className="page-description">{page.description}</p>
+        <button
+          type="button"
+          className={`page-eraser-button ${eraserHeld ? 'held' : ''}`}
+          onClick={onPickUpEraser}
+          aria-pressed={eraserHeld}
+          aria-label={`${eraserHeld ? 'Put down' : 'Pick up'} eraser for letter ${page.letter}`}
+        >
+          <span className="eraser-icon" aria-hidden="true" />
+          Eraser
+        </button>
         <button
           type="button"
           className="reset-page-button"
@@ -259,12 +269,14 @@ function App() {
   const [turn, setTurn] = useState(null);
   const [selectedColor, setSelectedColor] = useState(crayons[0]);
   const [heldColor, setHeldColor] = useState(null);
+  const [eraserHeld, setEraserHeld] = useState(false);
   const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
   const [drawings, setDrawings] = useState({});
 
   const leftPage = pages[pageIndex] || null;
   const rightPage = pages[pageIndex + 1] || null;
-  const hasColoring = Object.values(drawings).some((strokes) => strokes.length > 0);
+  const hasColoring = Object.values(drawings).some((strokes) => strokes.some((stroke) => !stroke.erase));
+  const drawingTool = eraserHeld ? 'eraser' : heldColor;
 
   useEffect(() => {
     if (!turn) {
@@ -285,7 +297,7 @@ function App() {
   }, [turn]);
 
   useEffect(() => {
-    if (!heldColor) {
+    if (!heldColor && !eraserHeld) {
       return undefined;
     }
 
@@ -295,6 +307,7 @@ function App() {
     const putCrayonDown = (event) => {
       if (event.key === 'Escape') {
         setHeldColor(null);
+        setEraserHeld(false);
       }
     };
 
@@ -305,12 +318,19 @@ function App() {
       window.removeEventListener('pointermove', followPointer);
       window.removeEventListener('keydown', putCrayonDown);
     };
-  }, [heldColor]);
+  }, [heldColor, eraserHeld]);
 
   const pickUpCrayon = (color, event) => {
     setSelectedColor(color);
     setPointerPosition({ x: event.clientX, y: event.clientY });
+    setEraserHeld(false);
     setHeldColor((current) => (current === color ? null : color));
+  };
+
+  const pickUpEraser = (event) => {
+    setPointerPosition({ x: event.clientX, y: event.clientY });
+    setHeldColor(null);
+    setEraserHeld((current) => !current);
   };
 
   const saveStroke = (letter, stroke) => {
@@ -328,6 +348,7 @@ function App() {
     setPageIndex(0);
     setTurn(null);
     setHeldColor(null);
+    setEraserHeld(false);
   };
 
   const goNext = () => {
@@ -345,7 +366,7 @@ function App() {
   };
 
   return (
-    <div className={`page-shell ${heldColor ? 'holding-crayon' : ''}`}>
+    <div className={`page-shell ${drawingTool ? 'holding-tool' : ''}`}>
       {heldColor ? (
         <div
           className="crayon held-crayon"
@@ -354,6 +375,13 @@ function App() {
         >
           <span className="crayon-label">CRAYON</span>
         </div>
+      ) : null}
+      {eraserHeld ? (
+        <div
+          className="held-eraser"
+          style={{ left: pointerPosition.x, top: pointerPosition.y }}
+          aria-hidden="true"
+        />
       ) : null}
       <header className="hero">
         <div>
@@ -372,9 +400,11 @@ function App() {
             <PageFace
               page={leftPage}
               side="left"
-              crayonColor={heldColor}
+              drawingTool={drawingTool}
               strokes={drawings[leftPage.letter] || []}
               onStrokeComplete={(stroke) => saveStroke(leftPage.letter, stroke)}
+              onPickUpEraser={pickUpEraser}
+              eraserHeld={eraserHeld}
               onResetPage={() => resetPage(leftPage.letter)}
             />
           ) : (
@@ -385,9 +415,11 @@ function App() {
             <PageFace
               page={rightPage}
               side="right"
-              crayonColor={heldColor}
+              drawingTool={drawingTool}
               strokes={drawings[rightPage.letter] || []}
               onStrokeComplete={(stroke) => saveStroke(rightPage.letter, stroke)}
+              onPickUpEraser={pickUpEraser}
+              eraserHeld={eraserHeld}
               onResetPage={() => resetPage(rightPage.letter)}
             />
           ) : (
@@ -401,9 +433,6 @@ function App() {
                 <span>{turn.direction === 'next' ? rightPage?.title ?? '' : leftPage?.title ?? ''}</span>
               </div>
               <PageArtwork page={turn.direction === 'next' ? rightPage : leftPage} />
-              <p className="page-description">
-                {turn.direction === 'next' ? rightPage?.description : leftPage?.description}
-              </p>
             </article>
           ) : null}
 
