@@ -280,7 +280,7 @@ function BookCover({ onOpen }) {
   );
 }
 
-function App() {
+function ColoringBook({ onExit }) {
   const [pageIndex, setPageIndex] = useState(-1);
   const [turn, setTurn] = useState(null);
   const [selectedColor, setSelectedColor] = useState(crayons[0]);
@@ -400,6 +400,9 @@ function App() {
           aria-hidden="true"
         />
       ) : null}
+      <button type="button" className="back-to-tunnel" onClick={onExit}>
+        <span aria-hidden="true">←</span> Activity doors
+      </button>
       <header className="hero">
         <div>
           <h1 className="hero-title">A-Z Coloring</h1>
@@ -483,6 +486,227 @@ function App() {
       </main>
     </div>
   );
+}
+
+function StartPage({ onEnterTunnel }) {
+  const [following, setFollowing] = useState(false);
+  const [reaction, setReaction] = useState(null);
+  const reactionTimeoutRef = useRef(null);
+  const macawAudioRef = useRef(null);
+
+  useEffect(() => () => window.clearTimeout(reactionTimeoutRef.current), []);
+
+  useEffect(() => {
+    const macawAudio = new Audio('/audio/cracker-macaw.m4a');
+    macawAudio.preload = 'auto';
+    macawAudioRef.current = macawAudio;
+
+    return () => {
+      macawAudio.pause();
+      macawAudioRef.current = null;
+    };
+  }, []);
+
+  const showReaction = (name) => {
+    window.clearTimeout(reactionTimeoutRef.current);
+    setReaction(name);
+    reactionTimeoutRef.current = window.setTimeout(() => setReaction(null), 1500);
+  };
+
+  const greetFromGrandma = () => {
+    showReaction('grandma');
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const greeting = new SpeechSynthesisUtterance('Hello!');
+      const voices = window.speechSynthesis.getVoices();
+      const preferredFemaleVoice = voices.find((voice) => (
+        /^en/i.test(voice.lang)
+        && /zira|samantha|victoria|karen|moira|susan|hazel|aria|jenny|ava|serena|tessa|female/i.test(voice.name)
+      ));
+      const englishFallback = voices.find((voice) => /^en/i.test(voice.lang));
+      greeting.voice = preferredFemaleVoice || englishFallback || null;
+      greeting.rate = 0.82;
+      greeting.pitch = 1.08;
+      window.speechSynthesis.speak(greeting);
+    }
+  };
+
+  const squawkFromMacaw = () => {
+    showReaction('macaw');
+    const macawAudio = macawAudioRef.current;
+    if (!macawAudio) {
+      return;
+    }
+    macawAudio.pause();
+    macawAudio.currentTime = 0;
+    macawAudio.play().catch(() => {});
+  };
+
+  const rustleTreeLeaves = () => {
+    showReaction('tree');
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      return;
+    }
+
+    const audioContext = new AudioContextClass();
+    const duration = 1.25;
+    const sampleCount = Math.ceil(audioContext.sampleRate * duration);
+    const buffer = audioContext.createBuffer(1, sampleCount, audioContext.sampleRate);
+    const samples = buffer.getChannelData(0);
+    let smoothedNoise = 0;
+
+    for (let index = 0; index < sampleCount; index += 1) {
+      smoothedNoise = (smoothedNoise * 0.78) + (((Math.random() * 2) - 1) * 0.22);
+      const flutter = 0.45 + (0.55 * Math.sin(index * 0.013) ** 2);
+      samples[index] = smoothedNoise * flutter;
+    }
+
+    const source = audioContext.createBufferSource();
+    const highPass = audioContext.createBiquadFilter();
+    const lowPass = audioContext.createBiquadFilter();
+    const gain = audioContext.createGain();
+    source.buffer = buffer;
+    highPass.type = 'highpass';
+    highPass.frequency.value = 650;
+    lowPass.type = 'lowpass';
+    lowPass.frequency.value = 4200;
+    gain.gain.setValueAtTime(0.0001, audioContext.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.13, audioContext.currentTime + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+    source.connect(highPass);
+    highPass.connect(lowPass);
+    lowPass.connect(gain);
+    gain.connect(audioContext.destination);
+    source.start();
+    source.stop(audioContext.currentTime + duration);
+    window.setTimeout(() => audioContext.close(), 1500);
+  };
+
+  useEffect(() => {
+    if (!following) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(onEnterTunnel, 1050);
+    return () => window.clearTimeout(timeoutId);
+  }, [following, onEnterTunnel]);
+
+  return (
+    <main className={`start-page ${following ? 'following' : ''}`}>
+      <section className="start-scene" aria-label="Grandma, a macaw, and a rabbit beside a rabbit hole">
+        <img
+          className="start-scene-art"
+          src="/pages/start-page/rabbit-hole-start-grandma-rest.png"
+          alt="Grandma standing beside a tree with a macaw, while a white rabbit waits beside its rabbit hole"
+        />
+        {reaction === 'grandma' ? (
+          <img
+            className="start-scene-art grandma-wave-scene"
+            src="/pages/start-page/rabbit-hole-start-grandma-wave.png"
+            alt=""
+            aria-hidden="true"
+          />
+        ) : null}
+        {reaction === 'macaw' ? (
+          <img
+            className="start-scene-art macaw-fluff-scene"
+            src="/pages/start-page/rabbit-hole-start-macaw-fluff.png"
+            alt=""
+            aria-hidden="true"
+          />
+        ) : null}
+        {reaction === 'tree' ? (
+          <img
+            className="start-scene-art tree-rustle-scene"
+            src="/pages/start-page/rabbit-hole-start-grandma-rest.png"
+            alt=""
+            aria-hidden="true"
+          />
+        ) : null}
+        <button type="button" className="character-hotspot tree-leaves-hotspot" onClick={rustleTreeLeaves} aria-label="Tap the green leaves to make them rustle" />
+        <button type="button" className="character-hotspot grandma-hotspot" onClick={greetFromGrandma} aria-label="Tap Grandma to hear her say hello" />
+        <button type="button" className="character-hotspot macaw-hotspot" onClick={squawkFromMacaw} aria-label="Tap the macaw to hear it squawk" />
+        <button
+          type="button"
+          className="rabbit-hotspot"
+          onClick={() => setFollowing(true)}
+          disabled={following}
+          aria-label="Follow the rabbit into the rabbit hole"
+        >
+          <span className="hotspot-ring" aria-hidden="true" />
+        </button>
+        <div className="follow-rabbit-message" aria-live="polite">
+          {following ? 'Follow the Rabbit!' : 'Tap the rabbit!'}
+        </div>
+        {reaction === 'grandma' ? <div className="scene-reaction grandma-reaction">Hello!</div> : null}
+        {reaction === 'macaw' ? <div className="scene-reaction macaw-reaction">SQUAWK!</div> : null}
+      </section>
+    </main>
+  );
+}
+
+const futureDoors = [
+  { label: 'Games', icon: '🎲' },
+  { label: 'Music', icon: '♪' },
+  { label: 'Stories', icon: '★' },
+  { label: 'Puzzles', icon: '◆' },
+];
+
+function TunnelPage({ onOpenColoring, onGoHome }) {
+  return (
+    <main className="tunnel-page">
+      <button type="button" className="tunnel-home-button" onClick={onGoHome}>
+        <span aria-hidden="true">←</span> Outside
+      </button>
+      <header className="tunnel-heading">
+        <p>Welcome down the rabbit hole!</p>
+        <h1>Choose a Door</h1>
+      </header>
+      <section className="activity-doors" aria-label="Activity doors">
+        <button type="button" className="activity-door coloring-door" onClick={onOpenColoring}>
+          <span className="door-icon" aria-hidden="true">🖍</span>
+          <strong>Coloring Book</strong>
+          <span className="door-knob" aria-hidden="true" />
+        </button>
+        {futureDoors.map((door) => (
+          <button type="button" className="activity-door locked-door" key={door.label} disabled>
+            <span className="door-icon" aria-hidden="true">{door.icon}</span>
+            <strong>{door.label}</strong>
+            <span className="door-lock" aria-hidden="true">🔒</span>
+          </button>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+function App() {
+  const validRoutes = ['/', '/tunnel', '/coloring'];
+  const getRoute = () => (validRoutes.includes(window.location.pathname) ? window.location.pathname : '/');
+  const [route, setRoute] = useState(getRoute);
+
+  useEffect(() => {
+    const syncRoute = () => setRoute(getRoute());
+    window.addEventListener('popstate', syncRoute);
+    return () => window.removeEventListener('popstate', syncRoute);
+  }, []);
+
+  const navigate = (path) => {
+    window.history.pushState({}, '', path);
+    setRoute(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  if (route === '/tunnel') {
+    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onGoHome={() => navigate('/')} />;
+  }
+
+  if (route === '/coloring') {
+    return <ColoringBook onExit={() => navigate('/tunnel')} />;
+  }
+
+  return <StartPage onEnterTunnel={() => navigate('/tunnel')} />;
 }
 
 export default App;
