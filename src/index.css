@@ -112,10 +112,15 @@ svg {
   position: relative;
   width: min(1200px, 100%);
   min-height: 720px;
-  padding: 24px;
-  border-radius: 34px;
-  background: linear-gradient(180deg, #b57a4e 0%, #8c5432 100%);
-  box-shadow: 0 24px 50px rgba(95, 53, 25, 0.24);
+  padding: 18px 20px 24px 14px;
+  border: 1px solid #d8d0c4;
+  border-radius: 14px 28px 28px 14px;
+  background: linear-gradient(90deg, #e9e3d9 0%, #fffdf8 4%, #f3eee6 100%);
+  box-shadow:
+    5px 6px 0 #eee8df,
+    9px 11px 0 #ddd6cc,
+    13px 16px 0 #cfc7bc,
+    0 30px 48px rgba(72, 59, 47, 0.22);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
@@ -124,9 +129,32 @@ svg {
 .book-spread::before {
   content: '';
   position: absolute;
-  inset: 12px;
-  border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  top: 7px;
+  right: -9px;
+  bottom: -10px;
+  left: 8px;
+  z-index: -1;
+  border: 1px solid #c9c0b4;
+  border-radius: 12px 30px 30px 12px;
+  background: #f8f4ed;
+  box-shadow: 4px 4px 0 #e5ded4, 8px 8px 0 #d5cdc2;
+  pointer-events: none;
+}
+
+.book-spread::after {
+  content: '';
+  position: absolute;
+  top: 28px;
+  right: 3px;
+  bottom: 30px;
+  width: 11px;
+  border-radius: 0 18px 18px 0;
+  background: repeating-linear-gradient(
+    180deg,
+    #f8f4ed 0 7px,
+    #cfc7bc 7px 8px
+  );
+  opacity: 0.8;
   pointer-events: none;
 }
 
@@ -223,6 +251,127 @@ svg {
   background: rgba(255, 255, 255, 0.45);
   font-size: 1.15rem;
   font-weight: 700;
+}
+
+.book-spread.single-page-book {
+  width: min(760px, 100%);
+  min-height: 850px;
+  grid-template-columns: minmax(0, 1fr);
+  perspective: 1800px;
+}
+
+.page-sheet.single {
+  width: 100%;
+  min-height: 800px;
+  transform-origin: left center;
+}
+
+.book-cover {
+  position: relative;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 22px;
+  min-height: 800px;
+  padding: 50px;
+  overflow: hidden;
+  border: 8px solid #6538a0;
+  border-radius: 22px 38px 38px 22px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.28), transparent 18%),
+    linear-gradient(145deg, #b784ef 0%, #8051c6 55%, #6636aa 100%);
+  color: #fff;
+  text-align: center;
+  box-shadow: inset 16px 0 0 rgba(63, 29, 103, 0.24), 14px 16px 0 #4d277e, 0 28px 40px rgba(58, 29, 82, 0.35);
+  transform-origin: left center;
+}
+
+.book-cover::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 3px dashed rgba(255, 255, 255, 0.5);
+  border-radius: 16px 30px 30px 16px;
+  pointer-events: none;
+}
+
+.book-cover p {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.book-cover h2 {
+  margin: 0;
+  font-family: 'Arial Rounded MT Bold', 'Comic Sans MS', sans-serif;
+  font-size: clamp(4rem, 11vw, 7.5rem);
+  line-height: 0.9;
+  text-shadow: 0 7px 0 #4f277e, 0 13px 20px rgba(39, 17, 62, 0.28);
+}
+
+.book-cover__letters {
+  color: #ffe66d;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: 0.3em;
+}
+
+.book-cover__picture {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: #ffe66d;
+  font-size: 3rem;
+}
+
+.book-cover__picture span:nth-child(2) {
+  font-size: 5rem;
+  transform: rotate(-28deg);
+}
+
+.book-cover button {
+  position: relative;
+  z-index: 2;
+  padding: 15px 28px;
+  border: 3px solid #d18b13;
+  border-radius: 999px;
+  background: #ffe66d;
+  color: #593385;
+  font-size: 1.15rem;
+  font-weight: 900;
+  box-shadow: 0 7px 0 #d18b13;
+}
+
+.book-cover button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 0 #d18b13;
+}
+
+.turning.next .page-sheet.single,
+.turning.next .book-cover {
+  animation: single-page-next 0.62s ease-in-out forwards;
+}
+
+.turning.prev .page-sheet.single,
+.turning.prev .book-cover {
+  transform-origin: right center;
+  animation: single-page-prev 0.62s ease-in-out forwards;
+}
+
+@keyframes single-page-next {
+  to {
+    opacity: 0.25;
+    transform: rotateY(-82deg) translateX(-8%);
+  }
+}
+
+@keyframes single-page-prev {
+  to {
+    opacity: 0.25;
+    transform: rotateY(82deg) translateX(8%);
+  }
 }
 
 .page-complete-star {
@@ -700,7 +849,13 @@ svg {
 
   .book-spread {
     min-height: 620px;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
+  }
+
+  .book-spread.single-page-book,
+  .page-sheet.single,
+  .book-cover {
+    min-height: 700px;
   }
 
   .crayon-grid {
@@ -717,6 +872,16 @@ svg {
     min-height: 540px;
     padding: 16px;
     gap: 12px;
+  }
+
+  .book-spread.single-page-book,
+  .page-sheet.single,
+  .book-cover {
+    min-height: 590px;
+  }
+
+  .book-cover {
+    padding: 30px 20px;
   }
 
   .book-spine {

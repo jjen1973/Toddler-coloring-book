@@ -264,8 +264,24 @@ function PageFace({ page, side, blank, drawingTool, strokes, onStrokeComplete, o
   );
 }
 
+function BookCover({ onOpen }) {
+  return (
+    <article className="book-cover">
+      <div className="book-cover__letters" aria-hidden="true">A B C</div>
+      <p>My first coloring book</p>
+      <h2>A-Z<br />Coloring</h2>
+      <div className="book-cover__picture" aria-hidden="true">
+        <span>★</span>
+        <span>🖍</span>
+        <span>★</span>
+      </div>
+      <button type="button" onClick={onOpen}>Open the book</button>
+    </article>
+  );
+}
+
 function App() {
-  const [pageIndex, setPageIndex] = useState(0);
+  const [pageIndex, setPageIndex] = useState(-1);
   const [turn, setTurn] = useState(null);
   const [selectedColor, setSelectedColor] = useState(crayons[0]);
   const [heldColor, setHeldColor] = useState(null);
@@ -273,8 +289,9 @@ function App() {
   const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
   const [drawings, setDrawings] = useState({});
 
-  const leftPage = pages[pageIndex] || null;
-  const rightPage = pages[pageIndex + 1] || null;
+  const currentPage = pages[pageIndex] || null;
+  const isCover = pageIndex === -1;
+  const isEnd = pageIndex === pages.length;
   const hasColoring = Object.values(drawings).some((strokes) => strokes.some((stroke) => !stroke.erase));
   const drawingTool = eraserHeld ? 'eraser' : heldColor;
 
@@ -286,9 +303,9 @@ function App() {
     const timeoutId = window.setTimeout(() => {
       setPageIndex((prev) => {
         if (turn.direction === 'next') {
-          return Math.min(prev + 1, pages.length - 1);
+          return Math.min(prev + 1, pages.length);
         }
-        return Math.max(prev - 1, 0);
+        return Math.max(prev - 1, -1);
       });
       setTurn(null);
     }, 620);
@@ -345,21 +362,21 @@ function App() {
   };
 
   const restartBook = () => {
-    setPageIndex(0);
+    setPageIndex(-1);
     setTurn(null);
     setHeldColor(null);
     setEraserHeld(false);
   };
 
   const goNext = () => {
-    if (turn || pageIndex >= pages.length - 1) {
+    if (turn || pageIndex >= pages.length) {
       return;
     }
     setTurn({ direction: 'next' });
   };
 
   const goBack = () => {
-    if (turn || pageIndex <= 0) {
+    if (turn || pageIndex <= -1) {
       return;
     }
     setTurn({ direction: 'prev' });
@@ -388,59 +405,34 @@ function App() {
           <h1 className="hero-title">A-Z Coloring</h1>
         </div>
         <div className="hero-pill">
-          Pages {pageIndex + 1}-{Math.min(pageIndex + 2, pages.length)}
+          {isCover ? 'Front cover' : isEnd ? 'The End' : `Letter ${currentPage.letter} · ${pageIndex + 1} of ${pages.length}`}
         </div>
       </header>
 
       <main className={`book-stage ${turn ? `turning ${turn.direction}` : ''}`}>
-        <section className="book-spread" aria-label="Open book spread">
-          <div className="book-spine" aria-hidden="true" />
-
-          {leftPage ? (
+        <section className="book-spread single-page-book" aria-label={isCover ? 'Book front cover' : isEnd ? 'End of book' : `Letter ${currentPage.letter} coloring page`}>
+          {isCover ? (
+            <BookCover onOpen={goNext} />
+          ) : currentPage ? (
             <PageFace
-              page={leftPage}
-              side="left"
+              page={currentPage}
+              side="single"
               drawingTool={drawingTool}
-              strokes={drawings[leftPage.letter] || []}
-              onStrokeComplete={(stroke) => saveStroke(leftPage.letter, stroke)}
+              strokes={drawings[currentPage.letter] || []}
+              onStrokeComplete={(stroke) => saveStroke(currentPage.letter, stroke)}
               onPickUpEraser={pickUpEraser}
               eraserHeld={eraserHeld}
-              onResetPage={() => resetPage(leftPage.letter)}
+              onResetPage={() => resetPage(currentPage.letter)}
             />
           ) : (
-            <PageFace side="left" blank onResetColoring={() => setDrawings({})} onRestartBook={restartBook} hasColoring={hasColoring} />
+            <PageFace side="single" blank onResetColoring={() => setDrawings({})} onRestartBook={restartBook} hasColoring={hasColoring} />
           )}
-
-          {rightPage ? (
-            <PageFace
-              page={rightPage}
-              side="right"
-              drawingTool={drawingTool}
-              strokes={drawings[rightPage.letter] || []}
-              onStrokeComplete={(stroke) => saveStroke(rightPage.letter, stroke)}
-              onPickUpEraser={pickUpEraser}
-              eraserHeld={eraserHeld}
-              onResetPage={() => resetPage(rightPage.letter)}
-            />
-          ) : (
-            <PageFace side="right" blank onResetColoring={() => setDrawings({})} onRestartBook={restartBook} hasColoring={hasColoring} />
-          )}
-
-          {turn ? (
-            <article className={`page-sheet turn-sheet ${turn.direction}`} style={{ '--page-accent': turn.direction === 'next' ? rightPage?.accent : leftPage?.accent }}>
-              <div className="page-sheet__top">
-                <span>{turn.direction === 'next' ? `Letter ${rightPage?.letter ?? ''}` : `Letter ${leftPage?.letter ?? ''}`}</span>
-                <span>{turn.direction === 'next' ? rightPage?.title ?? '' : leftPage?.title ?? ''}</span>
-              </div>
-              <PageArtwork page={turn.direction === 'next' ? rightPage : leftPage} />
-            </article>
-          ) : null}
 
           <button
             type="button"
             className="nav-button nav-prev"
             onClick={goBack}
-            disabled={pageIndex === 0 || !!turn}
+            disabled={pageIndex === -1 || !!turn}
             aria-label="Previous page"
           >
             ‹
@@ -449,13 +441,14 @@ function App() {
             type="button"
             className="nav-button nav-next"
             onClick={goNext}
-            disabled={pageIndex === pages.length - 1 || !!turn}
+            disabled={pageIndex === pages.length || !!turn}
             aria-label="Next page"
           >
             ›
           </button>
         </section>
 
+        {currentPage ? (
         <section className="toolstrip" aria-label="Color palette">
           <div className="toolstrip__copy">
             <p className="eyebrow">Crayons</p>
@@ -486,6 +479,7 @@ function App() {
             ) : null}
           </div>
         </section>
+        ) : null}
       </main>
     </div>
   );
