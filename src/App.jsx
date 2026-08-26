@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 const pages = [
   { letter: 'A', title: 'Apple', image: '/pages/letter-book/a-apple.png', description: 'A big apple page for the first letter.', accent: '#ff6b6b' },
@@ -79,20 +79,148 @@ function ElephantArt() {
   );
 }
 
-function PageArtwork({ page }) {
-  return <div className="page-art">{page.image ? <img src={page.image} alt={page.title} /> : <ElephantArt />}</div>;
+function ColoringCanvas({ color, strokes, onStrokeComplete }) {
+  const canvasRef = useRef(null);
+  const currentStrokeRef = useRef(null);
+
+  const drawStroke = (context, stroke, width, height) => {
+    if (!stroke?.points.length) {
+      return;
+    }
+
+    const points = stroke.points.map((point) => ({ x: point.x * width, y: point.y * height }));
+    context.save();
+    context.strokeStyle = stroke.color;
+    context.fillStyle = stroke.color;
+    context.lineWidth = Math.max(7, Math.min(width, height) * 0.035);
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.globalAlpha = 0.72;
+
+    if (points.length === 1) {
+      context.beginPath();
+      context.arc(points[0].x, points[0].y, context.lineWidth / 2, 0, Math.PI * 2);
+      context.fill();
+    } else {
+      context.beginPath();
+      context.moveTo(points[0].x, points[0].y);
+      points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+      context.stroke();
+    }
+    context.restore();
+  };
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      return undefined;
+    }
+
+    const redraw = () => {
+      const rectangle = canvas.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.max(1, Math.round(rectangle.width * ratio));
+      canvas.height = Math.max(1, Math.round(rectangle.height * ratio));
+      const context = canvas.getContext('2d');
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, rectangle.width, rectangle.height);
+      strokes.forEach((stroke) => drawStroke(context, stroke, rectangle.width, rectangle.height));
+    };
+
+    redraw();
+    const observer = new ResizeObserver(redraw);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [strokes]);
+
+  const pointFromEvent = (event) => {
+    const rectangle = event.currentTarget.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (event.clientX - rectangle.left) / rectangle.width)),
+      y: Math.max(0, Math.min(1, (event.clientY - rectangle.top) / rectangle.height)),
+    };
+  };
+
+  const startDrawing = (event) => {
+    if (!color) {
+      return;
+    }
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    currentStrokeRef.current = { color, points: [pointFromEvent(event)] };
+  };
+
+  const continueDrawing = (event) => {
+    const stroke = currentStrokeRef.current;
+    if (!stroke) {
+      return;
+    }
+    event.preventDefault();
+    const nextPoint = pointFromEvent(event);
+    const canvas = canvasRef.current;
+    const rectangle = canvas.getBoundingClientRect();
+    const context = canvas.getContext('2d');
+    const previousPoint = stroke.points[stroke.points.length - 1];
+    drawStroke(context, { color: stroke.color, points: [previousPoint, nextPoint] }, rectangle.width, rectangle.height);
+    stroke.points.push(nextPoint);
+  };
+
+  const finishDrawing = () => {
+    if (!currentStrokeRef.current) {
+      return;
+    }
+    onStrokeComplete(currentStrokeRef.current);
+    currentStrokeRef.current = null;
+  };
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`coloring-canvas ${color ? 'enabled' : ''}`}
+      onPointerDown={startDrawing}
+      onPointerMove={continueDrawing}
+      onPointerUp={finishDrawing}
+      onPointerCancel={finishDrawing}
+      aria-label={color ? 'Color this page with the crayon' : 'Pick up a crayon to color this page'}
+    />
+  );
 }
 
-function PageFace({ page, side, blank }) {
+function PageArtwork({ page, crayonColor, strokes = [], onStrokeComplete }) {
+  return (
+    <div className="page-art">
+      {page.image ? <img src={page.image} alt={page.title} draggable="false" /> : <ElephantArt />}
+      {onStrokeComplete ? (
+        <ColoringCanvas color={crayonColor} strokes={strokes} onStrokeComplete={onStrokeComplete} />
+      ) : null}
+    </div>
+  );
+}
+
+function PageFace({ page, side, blank, crayonColor, strokes, onStrokeComplete, onResetPage, onResetColoring, onRestartBook, hasColoring }) {
   if (blank) {
     return (
       <article className={`page-sheet ${side} blank`}>
         <div className="page-sheet__top">
           <span>End</span>
-          <span>Blank page</span>
+          <span>All done!</span>
         </div>
         <div className="blank-page">
-          <span>Keep turning</span>
+          <span className="end-page__star" aria-hidden="true">★</span>
+          <h2>Great coloring!</h2>
+          <p>Ready to make a brand-new book?</p>
+          <button
+            type="button"
+            className="reset-coloring-button"
+            onClick={onResetColoring}
+            disabled={!hasColoring}
+          >
+            Reset all coloring
+          </button>
+          <button type="button" className="restart-book-button" onClick={onRestartBook}>
+            Back to the beginning
+          </button>
+          <small>{hasColoring ? 'This clears every colored page.' : 'Your pages are already clean.'}</small>
         </div>
       </article>
     );
@@ -100,12 +228,28 @@ function PageFace({ page, side, blank }) {
 
   return (
     <article className={`page-sheet ${side}`} style={{ '--page-accent': page.accent }}>
+      {strokes?.length ? (
+        <span className="page-complete-star" role="img" aria-label={`Letter ${page.letter} page colored`}>
+          ★
+        </span>
+      ) : null}
       <div className="page-sheet__top">
         <span>Letter {page.letter}</span>
         <span>{page.title}</span>
       </div>
-      <PageArtwork page={page} />
-      <p className="page-description">{page.description}</p>
+      <PageArtwork page={page} crayonColor={crayonColor} strokes={strokes} onStrokeComplete={onStrokeComplete} />
+      <div className="page-footer">
+        <p className="page-description">{page.description}</p>
+        <button
+          type="button"
+          className="reset-page-button"
+          onClick={onResetPage}
+          disabled={!strokes?.length}
+          aria-label={`Reset coloring on letter ${page.letter}`}
+        >
+          Reset this page
+        </button>
+      </div>
     </article>
   );
 }
@@ -114,9 +258,13 @@ function App() {
   const [pageIndex, setPageIndex] = useState(0);
   const [turn, setTurn] = useState(null);
   const [selectedColor, setSelectedColor] = useState(crayons[0]);
+  const [heldColor, setHeldColor] = useState(null);
+  const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
+  const [drawings, setDrawings] = useState({});
 
   const leftPage = pages[pageIndex] || null;
   const rightPage = pages[pageIndex + 1] || null;
+  const hasColoring = Object.values(drawings).some((strokes) => strokes.length > 0);
 
   useEffect(() => {
     if (!turn) {
@@ -136,6 +284,52 @@ function App() {
     return () => window.clearTimeout(timeoutId);
   }, [turn]);
 
+  useEffect(() => {
+    if (!heldColor) {
+      return undefined;
+    }
+
+    const followPointer = (event) => {
+      setPointerPosition({ x: event.clientX, y: event.clientY });
+    };
+    const putCrayonDown = (event) => {
+      if (event.key === 'Escape') {
+        setHeldColor(null);
+      }
+    };
+
+    window.addEventListener('pointermove', followPointer);
+    window.addEventListener('keydown', putCrayonDown);
+
+    return () => {
+      window.removeEventListener('pointermove', followPointer);
+      window.removeEventListener('keydown', putCrayonDown);
+    };
+  }, [heldColor]);
+
+  const pickUpCrayon = (color, event) => {
+    setSelectedColor(color);
+    setPointerPosition({ x: event.clientX, y: event.clientY });
+    setHeldColor((current) => (current === color ? null : color));
+  };
+
+  const saveStroke = (letter, stroke) => {
+    setDrawings((current) => ({
+      ...current,
+      [letter]: [...(current[letter] || []), stroke],
+    }));
+  };
+
+  const resetPage = (letter) => {
+    setDrawings((current) => ({ ...current, [letter]: [] }));
+  };
+
+  const restartBook = () => {
+    setPageIndex(0);
+    setTurn(null);
+    setHeldColor(null);
+  };
+
   const goNext = () => {
     if (turn || pageIndex >= pages.length - 1) {
       return;
@@ -151,12 +345,19 @@ function App() {
   };
 
   return (
-    <div className="page-shell">
+    <div className={`page-shell ${heldColor ? 'holding-crayon' : ''}`}>
+      {heldColor ? (
+        <div
+          className="crayon held-crayon"
+          style={{ '--crayon-color': heldColor, left: pointerPosition.x, top: pointerPosition.y }}
+          aria-hidden="true"
+        >
+          <span className="crayon-label">CRAYON</span>
+        </div>
+      ) : null}
       <header className="hero">
         <div>
-          <p className="eyebrow">Toddler coloring book</p>
-          <h1>Turn the page</h1>
-          <p className="hero-copy">Two pages visible at once, like an open book.</p>
+          <h1 className="hero-title">A-Z Coloring</h1>
         </div>
         <div className="hero-pill">
           Pages {pageIndex + 1}-{Math.min(pageIndex + 2, pages.length)}
@@ -168,15 +369,29 @@ function App() {
           <div className="book-spine" aria-hidden="true" />
 
           {leftPage ? (
-            <PageFace page={leftPage} side="left" />
+            <PageFace
+              page={leftPage}
+              side="left"
+              crayonColor={heldColor}
+              strokes={drawings[leftPage.letter] || []}
+              onStrokeComplete={(stroke) => saveStroke(leftPage.letter, stroke)}
+              onResetPage={() => resetPage(leftPage.letter)}
+            />
           ) : (
-            <PageFace side="left" blank />
+            <PageFace side="left" blank onResetColoring={() => setDrawings({})} onRestartBook={restartBook} hasColoring={hasColoring} />
           )}
 
           {rightPage ? (
-            <PageFace page={rightPage} side="right" />
+            <PageFace
+              page={rightPage}
+              side="right"
+              crayonColor={heldColor}
+              strokes={drawings[rightPage.letter] || []}
+              onStrokeComplete={(stroke) => saveStroke(rightPage.letter, stroke)}
+              onResetPage={() => resetPage(rightPage.letter)}
+            />
           ) : (
-            <PageFace side="right" blank />
+            <PageFace side="right" blank onResetColoring={() => setDrawings({})} onRestartBook={restartBook} hasColoring={hasColoring} />
           )}
 
           {turn ? (
@@ -222,16 +437,24 @@ function App() {
               <button
                 key={color}
                 type="button"
-                className={`crayon ${selectedColor === color ? 'selected' : ''}`}
-                style={{ background: color }}
-                onClick={() => setSelectedColor(color)}
-                aria-label={`Select ${color} crayon`}
-              />
+                className={`crayon ${selectedColor === color ? 'selected' : ''} ${heldColor === color ? 'held' : ''}`}
+                style={{ '--crayon-color': color }}
+                onClick={(event) => pickUpCrayon(color, event)}
+                aria-label={`${heldColor === color ? 'Put down' : 'Pick up'} ${color} crayon`}
+                aria-pressed={heldColor === color}
+              >
+                <span className="crayon-label" aria-hidden="true">CRAYON</span>
+              </button>
             ))}
           </div>
           <div className="selected-color-box">
             <span className="selected-swatch" style={{ background: selectedColor }} />
-            <span>Current crayon</span>
+            <span aria-live="polite">{heldColor ? 'Crayon in your hand' : 'Current crayon'}</span>
+            {heldColor ? (
+              <button type="button" className="drop-crayon" onClick={() => setHeldColor(null)}>
+                Put it down
+              </button>
+            ) : null}
           </div>
         </section>
       </main>
