@@ -1641,12 +1641,23 @@ svg {
     background-repeat: no-repeat;
   }
 
+  .tunnel-heading {
+    position: absolute;
+    top: 5px;
+    left: 25%;
+    right: 3%;
+  }
+
   .tunnel-heading p {
-    display: none;
+    display: block;
+    margin: 0 0 1px;
+    font-size: clamp(0.58rem, 2.5vw, 0.82rem);
+    line-height: 1.05;
   }
 
   .tunnel-heading h1 {
-    font-size: clamp(1.65rem, 8vw, 2.6rem);
+    font-size: clamp(1.15rem, 5.5vw, 1.85rem);
+    line-height: 1;
   }
 
   .activity-doors {
