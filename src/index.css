@@ -1401,6 +1401,7 @@ svg {
   color: #fff7d2;
   box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.12), 0 14px 0 #321b19, 0 22px 30px rgba(0, 0, 0, 0.38);
   text-shadow: 0 3px 0 #4e2921;
+  text-decoration: none;
 }
 
 .activity-door strong {
@@ -1443,11 +1444,38 @@ svg {
   font-size: 1.8rem;
 }
 
+.watch-shows-door {
+  border-color: #79e7f5;
+  background: linear-gradient(90deg, #246f86, #48bfd6 48%, #205f76);
+  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.2), 0 14px 0 #153d4c, 0 22px 30px rgba(0, 0, 0, 0.38);
+}
+
+.watch-shows-icon {
+  display: grid;
+  width: clamp(82px, 11vw, 140px);
+  aspect-ratio: 1.35;
+  place-items: center;
+  border: clamp(5px, 0.7vw, 9px) solid #fff4c9;
+  border-radius: 22%;
+  background: #48bfd6;
+  color: #fff;
+  box-shadow: inset 0 0 0 5px #27677a, 0 7px 0 rgba(18, 48, 58, 0.65);
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1;
+  text-shadow: 0 3px 0 #24596a;
+}
+
+.watch-shows-door:hover,
+.watch-shows-door:focus-visible {
+  transform: translateY(-6px) scale(1.04);
+  filter: brightness(1.15);
+}
+
 @keyframes coloring-door-glow {
   50% { filter: brightness(1.14); box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.28), 0 14px 0 #422565, 0 0 32px #e4b7ff; }
 }
 
-@media (min-width: 701px) {
+@media (min-width: 1px) {
   .activity-doors {
     position: absolute;
     inset: 0;
@@ -1497,7 +1525,59 @@ svg {
   .activity-doors > .activity-door:nth-child(2) { left: 75%; top: 28%; width: 20%; height: 48%; }
   .activity-doors > .activity-door:nth-child(3) { left: 33%; top: 39%; width: 9%; height: 27%; }
   .activity-doors > .activity-door:nth-child(4) { right: 33%; top: 39%; width: 9%; height: 27%; }
-  .activity-doors .door-icon {
+  .activity-doors > .watch-shows-door {
+    z-index: 5;
+    color: #fff4c9;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .activity-doors > .watch-shows-door::after {
+    content: '';
+    position: absolute;
+    right: 112%;
+    top: 69%;
+    width: clamp(7px, 0.8vw, 12px);
+    height: 43%;
+    z-index: -1;
+    border: 2px solid #3e200d;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #6d3b1d, #bd7b3e 45%, #70401f);
+    box-shadow: 3px 5px 7px rgba(0, 0, 0, 0.45);
+  }
+
+  .activity-doors > .watch-shows-door .watch-shows-icon {
+    position: absolute;
+    z-index: 2;
+    right: 129%;
+    top: 58%;
+    width: clamp(24px, 2.8vw, 40px);
+    border-width: clamp(2px, 0.25vw, 3px);
+    border-radius: 7px;
+    box-shadow: inset 0 0 0 2px #27677a;
+    font-size: clamp(0.7rem, 1.2vw, 1.25rem);
+  }
+
+  .activity-doors > .watch-shows-door strong {
+    position: absolute;
+    top: 54%;
+    right: 82%;
+    width: 68%;
+    min-height: 24%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 29% 7px 32%;
+    border: clamp(2px, 0.28vw, 4px) solid #48240e;
+    background: linear-gradient(105deg, #9a5c2c, #d3944f 55%, #8a4e25);
+    clip-path: polygon(0 8%, 72% 8%, 100% 50%, 72% 92%, 0 92%);
+    box-shadow: inset 0 0 0 2px rgba(255, 224, 157, 0.2), 0 6px 8px rgba(0, 0, 0, 0.42);
+    font-size: clamp(0.8rem, 1.25vw, 1.35rem);
+    line-height: 1.08;
+    text-align: center;
+  }
+
+  .activity-doors .coloring-door .door-icon {
     display: block;
     position: absolute;
     z-index: 2;
@@ -1550,15 +1630,59 @@ svg {
 @keyframes tunnel-rabbit-bob { 50% { transform: translateX(-50%) translateY(-8px) scaleX(-1); } }
 
 @media (max-width: 700px) {
+  .tunnel-page {
+    min-height: 100dvh;
+    padding: 56px 6px 18px;
+    background-position: center top;
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+  }
+
+  .tunnel-heading p {
+    display: none;
+  }
+
+  .tunnel-heading h1 {
+    font-size: clamp(1.65rem, 8vw, 2.6rem);
+  }
+
   .activity-doors {
-    grid-template-columns: repeat(2, minmax(150px, 1fr));
+    position: absolute;
+    inset: 0 auto auto 0;
+    display: block;
+    width: 100%;
+    height: 56.25vw;
+    min-height: 0;
+    margin: 0;
   }
 
   .activity-door {
-    min-height: 280px;
+    min-height: 0;
   }
 
-  .tunnel-guide-rabbit { position: relative; left: auto; bottom: auto; display: block; margin: 20px auto 0; transform: scaleX(-1); animation: none; }
+  .tunnel-guide-rabbit {
+    position: absolute;
+    left: 43%;
+    top: 45vw;
+    bottom: auto;
+    width: clamp(42px, 12vw, 72px);
+    margin: 0;
+    transform: translateX(-50%) scaleX(-1);
+    animation: none;
+  }
+
+  .tunnel-home-button {
+    top: 8px;
+    left: 8px;
+    padding: 7px 10px;
+    border-width: 2px;
+    font-size: 0.75rem;
+  }
+
+  .activity-doors > .coloring-door strong,
+  .activity-doors > .watch-shows-door strong {
+    font-size: clamp(0.58rem, 2.4vw, 0.85rem);
+  }
 }
 
 @media (max-width: 520px) {
@@ -1566,7 +1690,7 @@ svg {
   .start-scene { border-width: 4px; border-radius: 18px; }
   .hotspot-ring { border-width: 3px; }
   .follow-rabbit-message { bottom: 2.5%; }
-  .activity-doors { grid-template-columns: 1fr 1fr; gap: 14px; }
-  .activity-door { min-height: 230px; border-width: 6px; }
-  .coloring-door { grid-column: 1 / -1; min-height: 260px; }
+  .activity-doors { gap: 0; }
+  .activity-door { min-height: 0; border-width: 0; }
+  .coloring-door { min-height: 0; }
 }

@@ -719,7 +719,6 @@ function StartPage({ onEnterTunnel }) {
 }
 
 const futureDoors = [
-  { label: 'Games', icon: '🎲' },
   { label: 'Music', icon: '♪' },
   { label: 'Stories', icon: '★' },
 ];
@@ -740,6 +739,16 @@ function TunnelPage({ onOpenColoring, onGoHome }) {
           <strong>Coloring Book</strong>
           <span className="door-knob" aria-hidden="true" />
         </button>
+        <a
+          className="activity-door watch-shows-door"
+          href="https://tubitv.com/category/preschool"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Watch Shows on Tubi preschool, opens in a new tab"
+        >
+          <span className="watch-shows-icon" aria-hidden="true"><span>▶</span></span>
+          <strong>Watch Shows</strong>
+        </a>
         {futureDoors.map((door) => (
           <button type="button" className="activity-door locked-door" key={door.label} disabled aria-label={`${door.label} activity locked`}>
             <span className="door-lock" aria-hidden="true">&#128274;</span>
