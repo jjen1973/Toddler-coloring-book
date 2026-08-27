@@ -494,6 +494,7 @@ function StartPage({ onEnterTunnel }) {
   const reactionTimeoutRef = useRef(null);
   const macawAudioRef = useRef(null);
   const grandmaVoicesRef = useRef([]);
+  const grandmaUtteranceRef = useRef(null);
 
   useEffect(() => () => window.clearTimeout(reactionTimeoutRef.current), []);
 
@@ -536,32 +537,26 @@ function StartPage({ onEnterTunnel }) {
         const voices = grandmaVoicesRef.current.length
           ? grandmaVoicesRef.current
           : window.speechSynthesis.getVoices();
-        if (!voices.length) {
-          return false;
-        }
-
         const greeting = new SpeechSynthesisUtterance('Hello!');
         const preferredFemaleVoice = voices.find((voice) => (
           /^en/i.test(voice.lang)
-          && /zira|samantha|victoria|karen|moira|susan|hazel|aria|jenny|ava|serena|tessa|emma|sonia|libby|natasha|michelle|nicole|joanna|salli|female/i.test(voice.name)
-        ));
-        if (!preferredFemaleVoice) {
-          return false;
+          && /zira|samantha|victoria|karen|moira|susan|hazel|aria|jenny|ava|serena|tessa|emma|sonia|libby|natasha|michelle|nicole|joanna|salli|female|google us english|english united states/i.test(voice.name)
+        )) || voices.find((voice) => /^en[-_](us|gb|au|ca)/i.test(voice.lang));
+        if (preferredFemaleVoice) {
+          greeting.voice = preferredFemaleVoice;
         }
-        greeting.voice = preferredFemaleVoice;
         greeting.rate = 0.82;
-        greeting.pitch = 1.08;
+        greeting.pitch = 1.2;
+        grandmaUtteranceRef.current = greeting;
+        greeting.onend = () => {
+          grandmaUtteranceRef.current = null;
+        };
+        window.speechSynthesis.resume();
         window.speechSynthesis.speak(greeting);
         return true;
       };
 
-      if (!speakHello()) {
-        const speakWhenReady = () => {
-          grandmaVoicesRef.current = window.speechSynthesis.getVoices();
-          speakHello();
-        };
-        window.speechSynthesis.addEventListener('voiceschanged', speakWhenReady, { once: true });
-      }
+      speakHello();
     }
   };
 
