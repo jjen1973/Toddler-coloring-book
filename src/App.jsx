@@ -618,13 +618,18 @@ function StartPage({ onEnterTunnel }) {
   };
 
   useEffect(() => {
-    if (rabbitStage !== 'hopping') {
-      return undefined;
+    if (rabbitStage === 'hopping') {
+      const timeoutId = window.setTimeout(() => setRabbitStage('at-hole'), 1050);
+      return () => window.clearTimeout(timeoutId);
     }
 
-    const timeoutId = window.setTimeout(() => setRabbitStage('at-hole'), 1050);
-    return () => window.clearTimeout(timeoutId);
-  }, [rabbitStage]);
+    if (rabbitStage === 'descending') {
+      const timeoutId = window.setTimeout(onEnterTunnel, 1800);
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    return undefined;
+  }, [rabbitStage, onEnterTunnel]);
 
   return (
     <main className={`start-page ${rabbitStage === 'hopping' ? 'following' : ''} ${rabbitStage === 'at-hole' ? 'rabbit-at-hole' : ''}`}>
@@ -686,7 +691,7 @@ function StartPage({ onEnterTunnel }) {
         <button
           type="button"
           className="follow-hotspot rabbit-hole-hotspot"
-          onClick={onEnterTunnel}
+          onClick={() => setRabbitStage('descending')}
           disabled={rabbitStage !== 'at-hole'}
           aria-label="Enter the rabbit hole"
         >
@@ -698,6 +703,17 @@ function StartPage({ onEnterTunnel }) {
         {reaction === 'grandma' ? <div className="scene-reaction grandma-reaction">Hello!</div> : null}
         {reaction === 'macaw' ? <div className="scene-reaction macaw-reaction">SQUAWK!</div> : null}
       </section>
+      {rabbitStage === 'descending' ? (
+        <div className="rabbit-hole-fall" role="status" aria-label="Falling down the rabbit hole">
+          <div className="rabbit-hole-spiral" aria-hidden="true">
+            <span className="tunnel-ring ring-one" />
+            <span className="tunnel-ring ring-two" />
+            <span className="tunnel-ring ring-three" />
+            <span className="tunnel-center" />
+          </div>
+          <div className="falling-message">Wheee!</div>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -706,7 +722,6 @@ const futureDoors = [
   { label: 'Games', icon: '🎲' },
   { label: 'Music', icon: '♪' },
   { label: 'Stories', icon: '★' },
-  { label: 'Puzzles', icon: '◆' },
 ];
 
 function TunnelPage({ onOpenColoring, onGoHome }) {
@@ -717,22 +732,21 @@ function TunnelPage({ onOpenColoring, onGoHome }) {
       </button>
       <header className="tunnel-heading">
         <p>Welcome down the rabbit hole!</p>
-        <h1>Choose a Door</h1>
+        <h1>Pick a Tunnel</h1>
       </header>
-      <section className="activity-doors" aria-label="Activity doors">
+      <section className="activity-doors" aria-label="Activity rabbit holes">
         <button type="button" className="activity-door coloring-door" onClick={onOpenColoring}>
           <span className="door-icon" aria-hidden="true">🖍</span>
           <strong>Coloring Book</strong>
           <span className="door-knob" aria-hidden="true" />
         </button>
         {futureDoors.map((door) => (
-          <button type="button" className="activity-door locked-door" key={door.label} disabled>
-            <span className="door-icon" aria-hidden="true">{door.icon}</span>
-            <strong>{door.label}</strong>
-            <span className="door-lock" aria-hidden="true">🔒</span>
+          <button type="button" className="activity-door locked-door" key={door.label} disabled aria-label={`${door.label} activity locked`}>
+            <span className="door-lock" aria-hidden="true">&#128274;</span>
           </button>
         ))}
       </section>
+      <img className="tunnel-guide-rabbit" src="/pages/start-page/rabbit-runner.png" alt="The white rabbit waits beside the activity rabbit holes" />
     </main>
   );
 }
