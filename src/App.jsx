@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import FamilyGate from './FamilyGate';
 
 const pages = [
   { letter: 'A', title: 'Apple', image: '/pages/letter-book/a-apple.png', description: 'A big apple page for the first letter.', accent: '#ff6b6b' },
@@ -280,7 +281,7 @@ function BookCover({ onOpen }) {
   );
 }
 
-function ColoringBook({ onExit }) {
+function ColoringBook({ onExit, family }) {
   const [pageIndex, setPageIndex] = useState(-1);
   const [turn, setTurn] = useState(null);
   const [selectedColor, setSelectedColor] = useState(crayons[0]);
@@ -288,6 +289,7 @@ function ColoringBook({ onExit }) {
   const [eraserHeld, setEraserHeld] = useState(false);
   const [pointerPosition, setPointerPosition] = useState({ x: 0, y: 0 });
   const [drawings, setDrawings] = useState({});
+  const rewardRequests = useRef(new Set());
 
   const currentPage = pages[pageIndex] || null;
   const isCover = pageIndex === -1;
@@ -355,6 +357,11 @@ function ColoringBook({ onExit }) {
       ...current,
       [letter]: [...(current[letter] || []), stroke],
     }));
+    const alreadyRewarded = family?.child?.coloringRewards?.includes(letter);
+    if (!stroke.erase && !alreadyRewarded && !rewardRequests.current.has(letter)) {
+      rewardRequests.current.add(letter);
+      family?.awardColoringPage(letter).catch(() => rewardRequests.current.delete(letter));
+    }
   };
 
   const resetPage = (letter) => {
@@ -722,19 +729,37 @@ const memoryPictures = [
   { value: 'fish', picture: '🐠', label: 'Tropical fish' },
   { value: 'frog', picture: '🐸', label: 'Green frog' },
   { value: 'fox', picture: '🦊', label: 'Orange fox' },
+  { value: 'rabbit', picture: '🐇', label: 'White rabbit' },
+  { value: 'turtle', picture: '🐢', label: 'Green turtle' },
+  { value: 'lion', picture: '🦁', label: 'Friendly lion' },
+  { value: 'whale', picture: '🐳', label: 'Blue whale' },
+  { value: 'bear', picture: '🐻', label: 'Brown bear' },
+  { value: 'bee', picture: '🐝', label: 'Busy bee' },
+  { value: 'owl', picture: '🦉', label: 'Wise owl' },
+  { value: 'penguin', picture: '🐧', label: 'Happy penguin' },
 ];
 
-function makeMemoryDeck() {
-  return memoryPictures
+const memoryLevels = Array.from({ length: 10 }, (_, index) => ({
+  level: index + 1,
+  pairs: index + 3,
+}));
+
+function makeMemoryDeck(pairCount) {
+  return memoryPictures.slice(0, pairCount)
     .flatMap((item) => [0, 1].map((copy) => ({ ...item, id: `${item.value}-${copy}` })))
     .sort(() => Math.random() - 0.5);
 }
 
-function MemoryGame({ onExit }) {
-  const [cards, setCards] = useState(makeMemoryDeck);
+function MemoryGame({ onExit, family }) {
+  const unlockedLevel = Math.min(memoryLevels.length, family?.child?.memoryUnlockedLevel || 1);
+  const completedLevels = family?.child?.memoryCompletedLevels || [];
+  const [level, setLevel] = useState(unlockedLevel);
+  const pairCount = memoryLevels[level - 1].pairs;
+  const [cards, setCards] = useState(() => makeMemoryDeck(pairCount));
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);
   const [turns, setTurns] = useState(0);
+  const rewardRequested = useRef(new Set());
 
   useEffect(() => {
     if (flipped.length !== 2) return undefined;
@@ -761,14 +786,23 @@ function MemoryGame({ onExit }) {
     });
   };
 
-  const restartGame = () => {
-    setCards(makeMemoryDeck());
+  const startLevel = (nextLevel) => {
+    setLevel(nextLevel);
+    setCards(makeMemoryDeck(memoryLevels[nextLevel - 1].pairs));
     setFlipped([]);
     setMatched([]);
     setTurns(0);
   };
 
-  const gameWon = matched.length === memoryPictures.length;
+  const gameWon = matched.length === pairCount;
+  const levelAlreadyCompleted = completedLevels.includes(level);
+
+  useEffect(() => {
+    if (!gameWon || levelAlreadyCompleted || rewardRequested.current.has(level)) return;
+    rewardRequested.current.add(level);
+    family?.awardMemoryLevel(level, memoryLevels.length)
+      .catch(() => rewardRequested.current.delete(level));
+  }, [family, gameWon, level, levelAlreadyCompleted]);
 
   return (
     <main className="memory-game-page">
@@ -776,8 +810,23 @@ function MemoryGame({ onExit }) {
       <header className="memory-game-heading">
         <p>Left Tunnel Two</p>
         <h1>Memory Match</h1>
-        <span>Find the matching pictures!</span>
+        <span>Level {level} · Find {pairCount} matching pairs!</span>
       </header>
+      <nav className="rabbit-maze-progress" aria-label="Rabbit grass maze level progress">
+        <div className="maze-grass-path" aria-hidden="true" />
+        {memoryLevels.map((item) => {
+          const locked = item.level > unlockedLevel;
+          const complete = completedLevels.includes(item.level);
+          const milestone = item.level % 5 === 0;
+          return (
+            <button type="button" key={item.level} disabled={locked} className={(item.level === level ? 'current ' : '') + (complete ? 'complete' : '')} onClick={() => startLevel(item.level)} aria-label={(locked ? 'Locked' : complete ? 'Completed' : 'Available') + ' level ' + item.level}>
+              <span aria-hidden="true">{item.level === level ? '🐇' : complete ? '🥕' : locked ? '🔒' : milestone ? '✨' : '🌼'}</span>
+              <strong>Level {item.level}</strong>
+              {milestone ? <small>Gold</small> : null}
+            </button>
+          );
+        })}
+      </nav>
       <section className="memory-card-grid" aria-label="Memory matching cards">
         {cards.map((card) => {
           const isFaceUp = flipped.includes(card.id) || matched.includes(card.value);
@@ -798,10 +847,11 @@ function MemoryGame({ onExit }) {
         })}
       </section>
       <div className="memory-game-status" aria-live="polite">
-        {gameWon ? <strong>You found them all! 🎉</strong> : <span>Matches: {matched.length} of {memoryPictures.length}</span>}
+        {gameWon ? <strong>{levelAlreadyCompleted ? 'You matched them all again!' : level % 5 === 0 ? 'Level complete · carrot + gold carrot!' : 'Level complete · 1 carrot earned!'}</strong> : <span>Matches: {matched.length} of {pairCount}</span>}
         <span>Turns: {turns}</span>
       </div>
-      <button type="button" className="memory-restart-button" onClick={restartGame}>{gameWon ? 'Play Again!' : 'Mix the Cards'}</button>
+      {gameWon ? <div className="memory-rabbit-win"><img src="/pages/start-page/rabbit-runner.png" alt="A happy rabbit eating its carrot reward" /><span aria-hidden="true">🥕</span><strong>Crunch! Great matching!</strong></div> : null}
+      <button type="button" className="memory-restart-button" onClick={() => startLevel(gameWon && level < memoryLevels.length ? level + 1 : level)}>{gameWon && level < memoryLevels.length ? 'Play Next Level!' : gameWon ? 'Replay This Level' : 'Mix the Cards'}</button>
     </main>
   );
 }
@@ -903,7 +953,7 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onGoHome }) {
   );
 }
 
-function App() {
+function ToddlerApp({ family }) {
   const validRoutes = ['/', '/tunnel', '/coloring', '/memory'];
   const getRoute = () => (validRoutes.includes(window.location.pathname) ? window.location.pathname : '/');
   const [route, setRoute] = useState(getRoute);
@@ -925,14 +975,18 @@ function App() {
   }
 
   if (route === '/coloring') {
-    return <ColoringBook onExit={() => navigate('/tunnel')} />;
+    return <ColoringBook family={family} onExit={() => navigate('/tunnel')} />;
   }
 
   if (route === '/memory') {
-    return <MemoryGame onExit={() => navigate('/tunnel')} />;
+    return <MemoryGame family={family} onExit={() => navigate('/tunnel')} />;
   }
 
   return <StartPage onEnterTunnel={() => navigate('/tunnel')} />;
+}
+
+function App() {
+  return <FamilyGate><ToddlerApp /></FamilyGate>;
 }
 
 export default App;
