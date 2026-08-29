@@ -714,13 +714,114 @@ function StartPage({ onEnterTunnel }) {
 }
 
 const futureDoors = [
-  { label: 'Music', icon: '♪' },
   { label: 'Stories', icon: '★' },
 ];
 
-function TunnelPage({ onOpenColoring, onGoHome }) {
+const memoryPictures = [
+  { value: 'parrot', picture: '🦜', label: 'Colorful parrot' },
+  { value: 'fish', picture: '🐠', label: 'Tropical fish' },
+  { value: 'frog', picture: '🐸', label: 'Green frog' },
+  { value: 'fox', picture: '🦊', label: 'Orange fox' },
+];
+
+function makeMemoryDeck() {
+  return memoryPictures
+    .flatMap((item) => [0, 1].map((copy) => ({ ...item, id: `${item.value}-${copy}` })))
+    .sort(() => Math.random() - 0.5);
+}
+
+function MemoryGame({ onExit }) {
+  const [cards, setCards] = useState(makeMemoryDeck);
+  const [flipped, setFlipped] = useState([]);
+  const [matched, setMatched] = useState([]);
+  const [turns, setTurns] = useState(0);
+
+  useEffect(() => {
+    if (flipped.length !== 2) return undefined;
+
+    const [firstId, secondId] = flipped;
+    const firstCard = cards.find((card) => card.id === firstId);
+    const secondCard = cards.find((card) => card.id === secondId);
+    const isMatch = firstCard.value === secondCard.value;
+
+    const matchTimer = window.setTimeout(() => {
+      if (isMatch) setMatched((current) => [...current, firstCard.value]);
+      setFlipped([]);
+    }, isMatch ? 500 : 850);
+
+    return () => window.clearTimeout(matchTimer);
+  }, [cards, flipped]);
+
+  const turnCard = (card) => {
+    if (flipped.length === 2 || flipped.includes(card.id) || matched.includes(card.value)) return;
+    setFlipped((current) => {
+      const next = [...current, card.id];
+      if (next.length === 2) setTurns((count) => count + 1);
+      return next;
+    });
+  };
+
+  const restartGame = () => {
+    setCards(makeMemoryDeck());
+    setFlipped([]);
+    setMatched([]);
+    setTurns(0);
+  };
+
+  const gameWon = matched.length === memoryPictures.length;
+
   return (
-    <main className="tunnel-page">
+    <main className="memory-game-page">
+      <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
+      <header className="memory-game-heading">
+        <p>Left Tunnel Two</p>
+        <h1>Memory Match</h1>
+        <span>Find the matching pictures!</span>
+      </header>
+      <section className="memory-card-grid" aria-label="Memory matching cards">
+        {cards.map((card) => {
+          const isFaceUp = flipped.includes(card.id) || matched.includes(card.value);
+          return (
+            <button
+              type="button"
+              className={`memory-card ${isFaceUp ? 'memory-card-up' : ''} ${matched.includes(card.value) ? 'memory-card-matched' : ''}`}
+              key={card.id}
+              onClick={() => turnCard(card)}
+              aria-label={isFaceUp ? card.label : 'Hidden memory card'}
+            >
+              <span className="memory-card-inner">
+                <span className="memory-card-back" aria-hidden="true">?</span>
+                <span className="memory-card-front" aria-hidden="true">{card.picture}</span>
+              </span>
+            </button>
+          );
+        })}
+      </section>
+      <div className="memory-game-status" aria-live="polite">
+        {gameWon ? <strong>You found them all! 🎉</strong> : <span>Matches: {matched.length} of {memoryPictures.length}</span>}
+        <span>Turns: {turns}</span>
+      </div>
+      <button type="button" className="memory-restart-button" onClick={restartGame}>{gameWon ? 'Play Again!' : 'Mix the Cards'}</button>
+    </main>
+  );
+}
+
+function TunnelPage({ onOpenColoring, onOpenMemory, onGoHome }) {
+  const [deepTunnelStage, setDeepTunnelStage] = useState('waiting');
+
+  useEffect(() => {
+    if (deepTunnelStage !== 'traveling' && deepTunnelStage !== 'returning') return undefined;
+
+    const travelTimer = window.setTimeout(() => {
+      setDeepTunnelStage(deepTunnelStage === 'traveling' ? 'revealed' : 'waiting');
+    }, 1450);
+
+    return () => window.clearTimeout(travelTimer);
+  }, [deepTunnelStage]);
+
+  return (
+    <main className={`tunnel-page deep-tunnel-${deepTunnelStage}`}>
+      <div className="deeper-tunnel-background" aria-hidden="true" />
       <button type="button" className="tunnel-home-button" onClick={onGoHome}>
         <span aria-hidden="true">←</span> Outside
       </button>
@@ -744,19 +845,66 @@ function TunnelPage({ onOpenColoring, onGoHome }) {
           <span className="watch-shows-icon" aria-hidden="true"><span>▶</span></span>
           <strong>Watch Shows</strong>
         </a>
+        <button
+          type="button"
+          className="activity-door memory-door"
+          onClick={onOpenMemory}
+          aria-label="Enter left tunnel two to play Memory Match"
+        >
+          <span className="memory-door-icon" aria-hidden="true">🧠</span>
+          <strong>Memory</strong>
+        </button>
         {futureDoors.map((door) => (
           <button type="button" className="activity-door locked-door" key={door.label} disabled aria-label={`${door.label} activity locked`}>
             <span className="door-lock" aria-hidden="true">&#128274;</span>
           </button>
         ))}
       </section>
+      <button
+        type="button"
+        className="deep-tunnel-hotspot"
+        onClick={() => setDeepTunnelStage('traveling')}
+        disabled={deepTunnelStage !== 'waiting'}
+        aria-label="Follow the rabbit deeper down the tunnel"
+      >
+        <span>Go deeper!</span>
+      </button>
+      <section className="deeper-door-locks" aria-label="Locked activity tunnels">
+        {[1, 2, 3, 4].map((lockNumber) => lockNumber === 1 ? (
+          <button
+            type="button"
+            className="deeper-door-lock deeper-door-lock-1 memory-tunnel-entrance"
+            key={lockNumber}
+            onClick={onOpenMemory}
+            aria-label="Enter left tunnel two to play Memory Match"
+          >
+            <span aria-hidden="true">🧠</span>
+            <strong>Memory</strong>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={`deeper-door-lock deeper-door-lock-${lockNumber}`}
+            key={lockNumber}
+            disabled
+            aria-label={`Activity tunnel ${lockNumber} is locked`}
+          >
+            <span aria-hidden="true">&#128274;</span>
+          </button>
+        ))}
+      </section>
+      {deepTunnelStage === 'revealed' ? (
+        <button type="button" className="tunnel-back-one-button" onClick={() => setDeepTunnelStage('returning')}>
+          <span aria-hidden="true">&#8617;</span> Back One Tunnel
+        </button>
+      ) : null}
       <img className="tunnel-guide-rabbit" src="/pages/start-page/rabbit-runner.png" alt="The white rabbit waits beside the activity rabbit holes" />
     </main>
   );
 }
 
 function App() {
-  const validRoutes = ['/', '/tunnel', '/coloring'];
+  const validRoutes = ['/', '/tunnel', '/coloring', '/memory'];
   const getRoute = () => (validRoutes.includes(window.location.pathname) ? window.location.pathname : '/');
   const [route, setRoute] = useState(getRoute);
 
@@ -773,11 +921,15 @@ function App() {
   };
 
   if (route === '/tunnel') {
-    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onGoHome={() => navigate('/')} />;
+    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onGoHome={() => navigate('/')} />;
   }
 
   if (route === '/coloring') {
     return <ColoringBook onExit={() => navigate('/tunnel')} />;
+  }
+
+  if (route === '/memory') {
+    return <MemoryGame onExit={() => navigate('/tunnel')} />;
   }
 
   return <StartPage onEnterTunnel={() => navigate('/tunnel')} />;
