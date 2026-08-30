@@ -970,6 +970,14 @@ const ballTasks = [
   { id: 'tiara', label: 'Tiara', icon: '👑', gold: 1 },
 ];
 
+const ballLayerAssets = [
+  { slot: 'dress', src: '/pages/ball-ready/layer-dress-canvas.png', bunSrc: '/pages/ball-ready/layer-dress-bun-canvas.png', label: 'Her lavender ball dress', layerClass: 'layer-dress' },
+  { slot: 'shoes', src: '/pages/ball-ready/layer-shoes-canvas.png', bunSrc: '/pages/ball-ready/layer-shoes-bun-canvas.png', label: 'Her lavender ball shoes', layerClass: 'layer-shoes' },
+  { slot: 'necklace', src: '/pages/ball-ready/layer-necklace-canvas.png', bunSrc: '/pages/ball-ready/layer-necklace-bun-canvas.png', label: 'Her purple heart necklace', layerClass: 'layer-necklace' },
+  { slot: 'bow', src: '/pages/ball-ready/layer-bow-canvas.png', bunSrc: '/pages/ball-ready/layer-bow-bun-canvas.png', label: 'Her lavender hair bow', layerClass: 'layer-bow' },
+  { slot: 'tiara', src: '/pages/ball-ready/layer-tiara-canvas.png', bunSrc: '/pages/ball-ready/layer-tiara-bun-canvas.png', label: 'Her silver and lavender tiara', layerClass: 'layer-tiara' },
+];
+
 function BallReady({ family, onExit }) {
   const emptyMakeover = { face: 'dirty', hairCare: 'messy', hairstyle: null, dress: false, shoes: false, necklace: false, bow: false, tiara: false };
   const [stage, setStage] = useState('dream');
@@ -981,11 +989,27 @@ function BallReady({ family, onExit }) {
   const [combingHair, setCombingHair] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
   const owned = family?.child?.ownedItems || [];
-  const required = ['wash', 'comb', 'dress', 'shoes', 'necklace', 'bow', 'tiara'];
+  const required = ['wash', 'comb', 'dress', 'shoes', 'necklace', 'tiara'];
   const ready = required.every((id) => done.includes(id)) && (done.includes('bun') || done.includes('braids'));
+
+  const isTaskUnlocked = (taskId) => {
+    if (taskId === 'wash' || taskId === 'comb') return true;
+    if (taskId === 'bun') return done.includes('wash') && done.includes('comb');
+    if (taskId === 'braids') return false;
+    if (taskId === 'dress') return done.includes('bun') || done.includes('braids');
+    if (taskId === 'shoes') return done.includes('dress');
+    if (taskId === 'necklace') return done.includes('shoes');
+    if (taskId === 'bow') return false;
+    if (taskId === 'tiara') return done.includes('necklace');
+    return false;
+  };
 
   const useItem = async (task) => {
     setMessage('');
+    if (!isTaskUnlocked(task.id)) {
+      setMessage('Finish the glowing steps first to unlock this item.');
+      return;
+    }
     if (!task.free && !owned.includes('ball-' + task.id)) {
       try {
         await family.purchaseItem('ball-' + task.id, task.carrots || 0, task.gold || 0);
@@ -1018,9 +1042,23 @@ function BallReady({ family, onExit }) {
     });
   };
 
-  const gettingReadyImage = makeover.hairCare === 'combed'
-    ? makeover.face === 'clean' ? '/pages/ball-ready/getting-ready.png' : '/pages/ball-ready/getting-ready-combed-dirty.png'
-    : makeover.face === 'clean' ? '/pages/ball-ready/getting-ready-clean-messy.png?v=2' : '/pages/ball-ready/getting-ready-messy.png';
+  const usesBunDressState = makeover.hairstyle === 'bun' && makeover.dress;
+  const usesBunDressShoesState = usesBunDressState && makeover.shoes;
+  const usesBunNecklaceState = usesBunDressShoesState && makeover.necklace;
+  const usesBunTiaraState = usesBunNecklaceState && makeover.tiara;
+  const gettingReadyImage = usesBunTiaraState
+      ? '/pages/ball-ready/getting-ready-bun-elegant-complete-v1.png'
+    : usesBunNecklaceState
+    ? '/pages/ball-ready/getting-ready-bun-dress-shoes-necklace-v1.png'
+    : usesBunDressShoesState
+    ? '/pages/ball-ready/getting-ready-bun-dress-shoes-v1.png'
+    : usesBunDressState
+    ? '/pages/ball-ready/getting-ready-bun-dress-v1.png'
+    : makeover.hairstyle === 'bun'
+    ? '/pages/ball-ready/getting-ready-bun-v1.png'
+    : makeover.hairCare === 'combed'
+      ? makeover.face === 'clean' ? '/pages/ball-ready/getting-ready.png' : '/pages/ball-ready/getting-ready-combed-dirty.png'
+      : makeover.face === 'clean' ? '/pages/ball-ready/getting-ready-clean-messy.png?v=2' : '/pages/ball-ready/getting-ready-messy.png';
 
   const finishGettingReady = async () => {
     setFinishing(true);
@@ -1046,15 +1084,12 @@ function BallReady({ family, onExit }) {
   return (
     <main className="ball-ready-page ready-stage">
       <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
-      <div className="ball-character-canvas">
+      <div className={'ball-character-canvas ' + (makeover.hairstyle === 'bun' ? 'bun-character-state' : '')}>
       <img src={stage === 'finished' ? '/pages/ball-ready/ball-dream.png' : gettingReadyImage} alt={stage === 'finished' ? 'The girl ready for the ball' : 'The girl showing every makeover choice selected so far'} />
-      {stage !== 'finished' && makeover.dress ? <img className="character-layer layer-dress" src="/pages/ball-ready/layer-dress-canvas.png" alt="Her lavender ball dress" /> : null}
-      {stage !== 'finished' && makeover.shoes ? <img className="character-layer layer-shoes" src="/pages/ball-ready/layer-shoes-canvas.png" alt="Her lavender ball shoes" /> : null}
-      {stage !== 'finished' && makeover.necklace ? <img className="character-layer layer-necklace" src="/pages/ball-ready/layer-necklace-canvas.png" alt="Her purple heart necklace" /> : null}
-      {stage !== 'finished' && makeover.hairstyle === 'bun' ? <div className="makeover-slot makeover-bun" aria-label="Hair styled in a bun" /> : null}
+      {stage !== 'finished' ? ballLayerAssets.map((layer) => makeover[layer.slot] && !(usesBunDressState && layer.slot === 'dress') && !(usesBunDressShoesState && layer.slot === 'shoes') && !(usesBunNecklaceState && layer.slot === 'necklace') && !(usesBunTiaraState && layer.slot === 'tiara') ? (
+        <img className={'character-layer ' + layer.layerClass} src={makeover.hairstyle === 'bun' ? layer.bunSrc : layer.src} alt={layer.label} key={layer.slot} />
+      ) : null) : null}
       {stage !== 'finished' && makeover.hairstyle === 'braids' ? <div className="makeover-slot makeover-braids" aria-label="Hair styled in braids"><span>〰</span><span>〰</span></div> : null}
-      {stage !== 'finished' && makeover.bow ? <img className="character-layer layer-bow" src="/pages/ball-ready/layer-bow-canvas.png" alt="Her lavender hair bow" /> : null}
-      {stage !== 'finished' && makeover.tiara ? <img className="character-layer layer-tiara" src="/pages/ball-ready/layer-tiara-canvas.png" alt="Her silver and lavender tiara" /> : null}
       {washingFace ? <div className="wash-face-action" role="status" aria-label="Washing her face"><span className="wash-rag" aria-hidden="true">🧼</span><span className="suds suds-one" aria-hidden="true" /><span className="suds suds-two" aria-hidden="true" /><span className="suds suds-three" aria-hidden="true" /><strong>Wash, wash, wash!</strong></div> : null}
       {combingHair ? <div className="comb-hair-action" role="status" aria-label="Combing her hair"><span aria-hidden="true">🪮</span><strong>Comb, comb, comb!</strong></div> : null}
       {activeItem ? <div className={'makeover-item-action action-' + activeItem.id} role="status"><span>{activeItem.icon}</span><strong>Adding {activeItem.label}!</strong></div> : null}
@@ -1065,8 +1100,11 @@ function BallReady({ family, onExit }) {
           <h1>Help Me Get Ready</h1>
           <p>Tap each job and item.</p>
           <div className="ball-task-grid">{ballTasks.map((task) => {
-            const isOwned = task.free || owned.includes('ball-' + task.id);
-            return <button type="button" key={task.id} className={done.includes(task.id) ? 'done' : ''} onClick={() => useItem(task)}><span>{task.icon}</span><strong>{task.label}</strong><small>{isOwned ? done.includes(task.id) ? 'Done!' : 'Use' : task.gold ? task.gold + ' gold carrot' : task.carrots + ' carrots'}</small></button>;
+            const isPurchased = owned.includes('ball-' + task.id);
+            const isOwned = task.free || isPurchased;
+            const isUnlocked = isTaskUnlocked(task.id);
+            const stateClass = done.includes(task.id) ? 'done' : isUnlocked ? 'unlocked' : isPurchased ? 'locked owned-locked' : 'locked';
+            return <button type="button" key={task.id} className={stateClass} disabled={!isUnlocked || washingFace || combingHair || Boolean(activeItem)} onClick={() => useItem(task)}><span>{task.icon}</span><strong>{task.label}</strong><small>{!isUnlocked ? isPurchased ? 'Owned • Locked' : 'Locked' : isOwned ? done.includes(task.id) ? 'Done!' : 'Use' : task.gold ? task.gold + ' gold carrot' : task.carrots + ' carrots'}</small></button>;
           })}</div>
           {message ? <p className="ball-shop-message" role="alert">{message}</p> : null}
           <button type="button" className="ball-finish-button" disabled={!ready || finishing} onClick={finishGettingReady}>{finishing ? 'Saving...' : "I'm Ready!"}</button>

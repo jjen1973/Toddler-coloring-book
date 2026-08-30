@@ -2404,8 +2404,10 @@ svg {
 .currency-pill.gold { background: transparent; }
 .family-loading { padding: 20px 28px; border-radius: 18px; background: white; color: #3d2c52; font: 800 1.2rem Arial, sans-serif; }
 
-@media (max-width: 600px) {
-  .family-toolbar { left: 8px; right: 8px; top: 8px; justify-content: center; flex-wrap: wrap; }
+@media (max-width: 1000px) {
+  .family-toolbar { left: 6px; right: 6px; top: 6px; justify-content: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+  .family-toolbar button { padding: 6px 8px; font-size: 12px; }
+  .currency-pill { font-size: .95rem; }
 }
 .rabbit-maze-progress { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; width: min(94%, 760px); margin: 8px auto 20px; padding: 22px; overflow: hidden; border: 5px solid #477a35; border-radius: 36px; background: repeating-linear-gradient(100deg, #8dcc62 0 18px, #80bf57 18px 34px); }
 .maze-grass-path { position: absolute; inset: 18% 7%; border: 12px dashed #e1c28d; border-radius: 45%; }
@@ -2437,8 +2439,13 @@ svg {
 .ball-task-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
 .ball-task-grid button { display: grid; place-items: center; gap: 3px; min-height: 92px; padding: 8px; border: 3px solid #c498db; border-radius: 17px; background: #fff7ff; color: #573568; cursor: pointer; }
 .ball-task-grid button.done { border-color: #58a65c; background: #e4f8df; }
+.ball-task-grid button.unlocked:not(.done) { border-color: #f0a830; box-shadow: 0 0 0 3px rgba(255,224,108,.65), 0 0 16px rgba(255,190,56,.8); animation: ball-task-glow 1s ease-in-out infinite alternate; }
+.ball-task-grid button.locked { filter: grayscale(.8); opacity: .48; cursor: not-allowed; }
+.ball-task-grid button.owned-locked { border-color: #8a6ab5; background: #eee5f8; filter: none; opacity: .7; }
+.ball-task-grid button.owned-locked small { color: #614382; }
 .ball-task-grid span { font-size: 1.7rem; }
 .ball-task-grid small { font-weight: 800; color: #8b4e35; }
+@keyframes ball-task-glow { to { box-shadow: 0 0 0 4px rgba(255,233,130,.85), 0 0 24px rgba(255,176,34,1); transform: translateY(-2px); } }
 .ball-finish-button { width: 100%; margin-top: 14px; }
 .ball-finish-button:disabled { opacity: .45; cursor: not-allowed; }
 .ball-shop-message { padding: 8px; border-radius: 10px; background: #ffe1e5; color: #991b34; font-weight: 800; }
@@ -2461,11 +2468,11 @@ svg {
 .makeover-item-action { position: absolute; z-index: 5; left: 49.5%; top: 43%; display: grid; place-items: center; gap: 6px; padding: 14px 20px; border: 4px solid #fff; border-radius: 22px; background: rgba(126,73,158,.94); color: #fff; transform: translate(-50%, -50%); animation: makeover-item-pop .45s ease-in-out infinite alternate; }
 .makeover-item-action span { font-size: 3.4rem; }
 @keyframes makeover-item-pop { to { transform: translate(-50%, -54%) scale(1.08) rotate(2deg); } }
-@media (max-width: 700px) {
+@media (max-width: 1000px) {
   .ball-ready-page { overflow: visible; }
-  .ball-ready-page > img { width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: contain; object-position: center; }
-  .ball-character-canvas { width: 100%; height: auto; aspect-ratio: 3 / 2; }
-  .ball-character-canvas > img:first-child, .character-layer { object-fit: contain; object-position: center; }
+  .ball-ready-page > img { width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; object-position: center; }
+  .ball-character-canvas { width: 100%; height: auto; aspect-ratio: 4 / 3; }
+  .ball-character-canvas > img:first-child, .character-layer { object-fit: cover; object-position: center; }
   .ball-task-panel { position: relative; top: auto; right: auto; width: auto; max-height: none; margin: 0 10px 20px; }
   .ball-dialogue { bottom: 3%; }
   .ball-dream-copy { left: auto; right: 2%; top: 25%; bottom: auto; width: 42%; transform: none; }
@@ -2481,11 +2488,11 @@ svg {
 .suds-three { left: 48%; top: 68%; width: 16px; height: 16px; animation-delay: .45s; }
 @keyframes wash-rag-scrub { from { transform: translate(-85%, -50%) rotate(-18deg); } to { transform: translate(-15%, -45%) rotate(18deg); } }
 @keyframes wash-suds-float { from { transform: translateY(10px) scale(.65); opacity: 0; } 40% { opacity: 1; } to { transform: translateY(-45px) scale(1.15); opacity: 0; } }
-@media (max-width: 700px) { .wash-face-action { top: 14%; left: 50%; transform: translate(-50%, -50%) scale(.72); } }
+@media (max-width: 1000px) { .wash-face-action { top: 28%; left: 50%; transform: translate(-50%, -50%) scale(.72); } }
 .comb-hair-action { position: absolute; z-index: 4; left: 47%; top: 25%; width: 210px; height: 260px; pointer-events: none; transform: translate(-50%, -35%); }
 .comb-hair-action span { position: absolute; left: 50%; top: 20%; font-size: 4rem; animation: comb-hair-stroke .62s ease-in-out infinite; }
 .comb-hair-action strong { position: absolute; left: 50%; top: -12px; width: max-content; padding: 6px 10px; border-radius: 999px; background: white; color: #65417a; transform: translateX(-50%); }
 @keyframes comb-hair-stroke { from { transform: translate(-90%, -20%) rotate(-28deg); } to { transform: translate(20%, 150%) rotate(12deg); } }
-@media (max-width: 700px) { .comb-hair-action { left: 50%; top: 12%; transform: translate(-50%, -35%) scale(.7); } }
+@media (max-width: 1000px) { .comb-hair-action { left: 50%; top: 25%; transform: translate(-50%, -35%) scale(.7); } }
 .face-clean-badge { position: absolute; z-index: 3; left: 49%; top: 13%; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.94); color: #5e3a70; font-weight: 900; transform: translateX(-50%); animation: face-clean-pop .45s ease-out; }
 @keyframes face-clean-pop { from { opacity: 0; transform: translateX(-50%) scale(.6); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
