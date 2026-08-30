@@ -720,6 +720,7 @@ function StartPage({ onEnterTunnel }) {
   );
 }
 
+const BALL_READY_ENABLED = import.meta.env.DEV;
 const futureDoors = [
   { label: 'Stories', icon: '★' },
 ];
@@ -856,7 +857,7 @@ function MemoryGame({ onExit, family }) {
   );
 }
 
-function TunnelPage({ onOpenColoring, onOpenMemory, onGoHome }) {
+function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome }) {
   const [deepTunnelStage, setDeepTunnelStage] = useState('waiting');
 
   useEffect(() => {
@@ -904,6 +905,10 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onGoHome }) {
           <span className="memory-door-icon" aria-hidden="true">🧠</span>
           <strong>Memory</strong>
         </button>
+        {BALL_READY_ENABLED ? <button type="button" className="activity-door locked-door ball-ready-door" onClick={onOpenBallReady} aria-label="Enter right tunnel two to help get ready for the ball">
+          <span className="door-lock" aria-hidden="true">👗</span>
+          <strong>Ball Ready</strong>
+        </button> : null}
         {futureDoors.map((door) => (
           <button type="button" className="activity-door locked-door" key={door.label} disabled aria-label={`${door.label} activity locked`}>
             <span className="door-lock" aria-hidden="true">&#128274;</span>
@@ -953,8 +958,126 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onGoHome }) {
   );
 }
 
+const ballTasks = [
+  { id: 'wash', label: 'Wash Face', icon: '🫧', free: true },
+  { id: 'comb', label: 'Comb Hair', icon: '🪮', free: true },
+  { id: 'bun', label: 'Make a Bun', icon: '💇‍♀️', free: true },
+  { id: 'braids', label: 'Braids', icon: '🎀', carrots: 3, choice: 'hair' },
+  { id: 'dress', label: 'Ball Dress', icon: '👗', carrots: 3 },
+  { id: 'shoes', label: 'Ball Shoes', icon: '👠', carrots: 3 },
+  { id: 'necklace', label: 'Necklace', icon: '📿', carrots: 4 },
+  { id: 'bow', label: 'Hair Bow', icon: '🎀', carrots: 3 },
+  { id: 'tiara', label: 'Tiara', icon: '👑', gold: 1 },
+];
+
+function BallReady({ family, onExit }) {
+  const emptyMakeover = { face: 'dirty', hairCare: 'messy', hairstyle: null, dress: false, shoes: false, necklace: false, bow: false, tiara: false };
+  const [stage, setStage] = useState('dream');
+  const [done, setDone] = useState([]);
+  const [makeover, setMakeover] = useState(emptyMakeover);
+  const [message, setMessage] = useState('');
+  const [finishing, setFinishing] = useState(false);
+  const [washingFace, setWashingFace] = useState(false);
+  const [combingHair, setCombingHair] = useState(false);
+  const [activeItem, setActiveItem] = useState(null);
+  const owned = family?.child?.ownedItems || [];
+  const required = ['wash', 'comb', 'dress', 'shoes', 'necklace', 'bow', 'tiara'];
+  const ready = required.every((id) => done.includes(id)) && (done.includes('bun') || done.includes('braids'));
+
+  const useItem = async (task) => {
+    setMessage('');
+    if (!task.free && !owned.includes('ball-' + task.id)) {
+      try {
+        await family.purchaseItem('ball-' + task.id, task.carrots || 0, task.gold || 0);
+      } catch (error) {
+        setMessage(error.message);
+        return;
+      }
+    }
+    if (task.id === 'wash') {
+      setWashingFace(true);
+      await new Promise((resolve) => window.setTimeout(resolve, 1600));
+      setMakeover((current) => ({ ...current, face: 'clean' }));
+      setWashingFace(false);
+    } else if (task.id === 'comb') {
+      setCombingHair(true);
+      await new Promise((resolve) => window.setTimeout(resolve, 1700));
+      setMakeover((current) => ({ ...current, hairCare: 'combed' }));
+      setCombingHair(false);
+    } else {
+      setActiveItem(task);
+      await new Promise((resolve) => window.setTimeout(resolve, 900));
+      setMakeover((current) => task.id === 'bun' || task.id === 'braids'
+        ? { ...current, hairstyle: task.id }
+        : { ...current, [task.id]: true });
+      setActiveItem(null);
+    }
+    setDone((current) => {
+      const withoutOtherHair = task.choice === 'hair' ? current.filter((id) => id !== 'bun') : task.id === 'bun' ? current.filter((id) => id !== 'braids') : current;
+      return withoutOtherHair.includes(task.id) ? withoutOtherHair : [...withoutOtherHair, task.id];
+    });
+  };
+
+  const gettingReadyImage = makeover.hairCare === 'combed'
+    ? makeover.face === 'clean' ? '/pages/ball-ready/getting-ready.png' : '/pages/ball-ready/getting-ready-combed-dirty.png'
+    : makeover.face === 'clean' ? '/pages/ball-ready/getting-ready-clean-messy.png?v=2' : '/pages/ball-ready/getting-ready-messy.png';
+
+  const finishGettingReady = async () => {
+    setFinishing(true);
+    setMessage('');
+    try {
+      await family.awardBallReadyCompletion();
+      setStage('finished');
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setFinishing(false);
+    }
+  };
+
+  if (stage === 'dream') return (
+    <main className="ball-ready-page dream-stage">
+      <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
+      <img src="/pages/ball-ready/ball-dream.png" alt="A girl dressed beautifully and ready for the ball" />
+      <div className="ball-dialogue ball-dream-copy"><h1>My Ball Dream!</h1><p>Will you help me get ready?</p><button type="button" onClick={() => setStage('ready')}>Let's help!</button></div>
+    </main>
+  );
+
+  return (
+    <main className="ball-ready-page ready-stage">
+      <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
+      <div className="ball-character-canvas">
+      <img src={stage === 'finished' ? '/pages/ball-ready/ball-dream.png' : gettingReadyImage} alt={stage === 'finished' ? 'The girl ready for the ball' : 'The girl showing every makeover choice selected so far'} />
+      {stage !== 'finished' && makeover.dress ? <img className="character-layer layer-dress" src="/pages/ball-ready/layer-dress-canvas.png" alt="Her lavender ball dress" /> : null}
+      {stage !== 'finished' && makeover.shoes ? <img className="character-layer layer-shoes" src="/pages/ball-ready/layer-shoes-canvas.png" alt="Her lavender ball shoes" /> : null}
+      {stage !== 'finished' && makeover.necklace ? <img className="character-layer layer-necklace" src="/pages/ball-ready/layer-necklace-canvas.png" alt="Her purple heart necklace" /> : null}
+      {stage !== 'finished' && makeover.hairstyle === 'bun' ? <div className="makeover-slot makeover-bun" aria-label="Hair styled in a bun" /> : null}
+      {stage !== 'finished' && makeover.hairstyle === 'braids' ? <div className="makeover-slot makeover-braids" aria-label="Hair styled in braids"><span>〰</span><span>〰</span></div> : null}
+      {stage !== 'finished' && makeover.bow ? <img className="character-layer layer-bow" src="/pages/ball-ready/layer-bow-canvas.png" alt="Her lavender hair bow" /> : null}
+      {stage !== 'finished' && makeover.tiara ? <img className="character-layer layer-tiara" src="/pages/ball-ready/layer-tiara-canvas.png" alt="Her silver and lavender tiara" /> : null}
+      {washingFace ? <div className="wash-face-action" role="status" aria-label="Washing her face"><span className="wash-rag" aria-hidden="true">🧼</span><span className="suds suds-one" aria-hidden="true" /><span className="suds suds-two" aria-hidden="true" /><span className="suds suds-three" aria-hidden="true" /><strong>Wash, wash, wash!</strong></div> : null}
+      {combingHair ? <div className="comb-hair-action" role="status" aria-label="Combing her hair"><span aria-hidden="true">🪮</span><strong>Comb, comb, comb!</strong></div> : null}
+      {activeItem ? <div className={'makeover-item-action action-' + activeItem.id} role="status"><span>{activeItem.icon}</span><strong>Adding {activeItem.label}!</strong></div> : null}
+      {makeover.face === 'clean' && makeover.hairCare !== 'combed' && !washingFace ? <div className="face-clean-badge" aria-live="polite">✨ Face is clean! ✨</div> : null}
+      </div>
+      {stage === 'finished' ? <div className="ball-dialogue"><h1>Ready for the Ball!</h1><p>Thank you! I feel wonderful!</p><button type="button" onClick={() => { setStage('ready'); setDone([]); setMakeover(emptyMakeover); }}>Play Again</button></div> : (
+        <aside className="ball-task-panel">
+          <h1>Help Me Get Ready</h1>
+          <p>Tap each job and item.</p>
+          <div className="ball-task-grid">{ballTasks.map((task) => {
+            const isOwned = task.free || owned.includes('ball-' + task.id);
+            return <button type="button" key={task.id} className={done.includes(task.id) ? 'done' : ''} onClick={() => useItem(task)}><span>{task.icon}</span><strong>{task.label}</strong><small>{isOwned ? done.includes(task.id) ? 'Done!' : 'Use' : task.gold ? task.gold + ' gold carrot' : task.carrots + ' carrots'}</small></button>;
+          })}</div>
+          {message ? <p className="ball-shop-message" role="alert">{message}</p> : null}
+          <button type="button" className="ball-finish-button" disabled={!ready || finishing} onClick={finishGettingReady}>{finishing ? 'Saving...' : "I'm Ready!"}</button>
+        </aside>
+      )}
+    </main>
+  );
+}
+
 function ToddlerApp({ family }) {
-  const validRoutes = ['/', '/tunnel', '/coloring', '/memory'];
+  const validRoutes = ['/', '/tunnel', '/coloring', '/memory', ...(BALL_READY_ENABLED ? ['/ball-ready'] : [])];
   const getRoute = () => (validRoutes.includes(window.location.pathname) ? window.location.pathname : '/');
   const [route, setRoute] = useState(getRoute);
 
@@ -971,7 +1094,7 @@ function ToddlerApp({ family }) {
   };
 
   if (route === '/tunnel') {
-    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onGoHome={() => navigate('/')} />;
+    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onOpenBallReady={() => navigate('/ball-ready')} onGoHome={() => navigate('/')} />;
   }
 
   if (route === '/coloring') {
@@ -980,6 +1103,10 @@ function ToddlerApp({ family }) {
 
   if (route === '/memory') {
     return <MemoryGame family={family} onExit={() => navigate('/tunnel')} />;
+  }
+
+  if (BALL_READY_ENABLED && route === '/ball-ready') {
+    return <BallReady family={family} onExit={() => navigate('/tunnel')} />;
   }
 
   return <StartPage onEnterTunnel={() => navigate('/tunnel')} />;

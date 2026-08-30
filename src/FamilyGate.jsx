@@ -129,6 +129,44 @@ export default function FamilyGate({ children }) {
     });
   };
 
+  const purchaseItem = async (itemId, carrotCost = 0, goldCost = 0) => {
+    if (!user || !selected) return false;
+    const childReference = doc(db, 'parents', user.uid, 'children', selected.id);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(childReference);
+      if (!snapshot.exists()) throw new Error('Child profile was not found.');
+      const data = snapshot.data();
+      const owned = Array.isArray(data.ownedItems) ? data.ownedItems : [];
+      if (owned.includes(itemId)) return;
+      if ((data.carrots || 0) < carrotCost || (data.goldCarrots || 0) < goldCost) {
+        throw new Error('Earn a few more carrots to buy this item.');
+      }
+      transaction.update(childReference, {
+        ownedItems: [...owned, itemId],
+        carrots: (data.carrots || 0) - carrotCost,
+        goldCarrots: (data.goldCarrots || 0) - goldCost,
+      });
+    });
+    return true;
+  };
+
+  const awardBallReadyCompletion = async () => {
+    if (!user || !selected) return false;
+    const childReference = doc(db, 'parents', user.uid, 'children', selected.id);
+    await runTransaction(db, async (transaction) => {
+      const snapshot = await transaction.get(childReference);
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      if (data.ballReadyCompletionAwarded) return;
+      transaction.update(childReference, {
+        ballReadyCompletionAwarded: true,
+        carrots: (data.carrots || 0) + 5,
+        goldCarrots: (data.goldCarrots || 0) + 1,
+      });
+    });
+    return true;
+  };
+
   if (checking) return <main className='family-gate'><p className='family-loading'>Opening your family account...</p></main>;
 
   if (!user) return (
@@ -181,7 +219,7 @@ export default function FamilyGate({ children }) {
         <button type='button' onClick={() => signOut(auth)}>Sign out</button>
       </aside>
       {React.cloneElement(children, {
-        family: { user, child: selected, awardColoringPage, awardMemoryLevel },
+        family: { user, child: selected, awardColoringPage, awardMemoryLevel, purchaseItem, awardBallReadyCompletion },
       })}
     </>
   );
