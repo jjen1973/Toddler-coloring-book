@@ -2479,6 +2479,138 @@ svg {
   .ball-dream-copy p { font-size: .82rem; }
 }
 .ball-ready-door { opacity: 1 !important; cursor: pointer !important; }
+.activity-doors > .coloring-door::after,
+.activity-doors > .watch-shows-door::after,
+.activity-doors > .memory-door::after {
+  display: none;
+}
+.activity-doors > .coloring-door strong,
+.activity-doors > .watch-shows-door strong,
+.activity-doors > .memory-door strong,
+.activity-doors > .ball-ready-door strong {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.activity-doors .ball-ready-door .door-lock {
+  display: block;
+  width: clamp(38px, 5vw, 76px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: clamp(2px, .25vw, 4px) solid #f6d58b;
+  border-radius: 50%;
+  background: #f1dcff url('/pages/ball-ready/getting-ready-messy.png') 50% 17% / 350% auto no-repeat;
+  box-shadow: 0 4px 8px rgba(42, 17, 52, .55);
+  font-size: 0;
+  line-height: 0;
+  text-indent: -9999px;
+  color: transparent;
+  text-shadow: none;
+  filter: none;
+}
+
+/* Icon-only tunnel markers: center each marker in its own doorway. */
+.activity-doors > .coloring-door .door-icon,
+.activity-doors > .watch-shows-door .watch-shows-icon,
+.activity-doors > .memory-door .memory-door-icon,
+.activity-doors > .ball-ready-door .door-lock {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  top: 30%;
+  transform: translate(-50%, -50%);
+}
+
+.activity-doors > .coloring-door .door-icon,
+.activity-doors > .memory-door .memory-door-icon {
+  font-size: clamp(1.8rem, 3.4vw, 3.5rem);
+}
+
+.activity-doors > .watch-shows-door .watch-shows-icon {
+  display: grid;
+  width: auto;
+  height: auto;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: clamp(1.8rem, 3.4vw, 3.5rem);
+}
+
+.activity-doors > .coloring-door strong,
+.activity-doors > .watch-shows-door strong,
+.activity-doors > .memory-door strong,
+.activity-doors > .ball-ready-door strong {
+  position: absolute;
+  left: 50%;
+  right: auto;
+  top: 48%;
+  display: block;
+  width: max-content;
+  max-width: 95%;
+  min-height: 0;
+  transform: translateX(-50%);
+  clip-path: none;
+  color: #fff4c9;
+  font-size: clamp(.72rem, 1.45vw, 1.35rem);
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 2px 2px #321606, 0 0 5px #321606;
+  white-space: normal;
+}
+
+.activity-doors > .coloring-door .door-icon,
+.activity-doors > .watch-shows-door .watch-shows-icon {
+  top: 38%;
+}
+
+.activity-doors > .coloring-door strong,
+.activity-doors > .watch-shows-door strong {
+  top: 52%;
+  white-space: nowrap;
+}
+
+.activity-doors > .ball-ready-door .door-lock {
+  top: 24%;
+}
+
+/* Match the deeper Memory entrance to the icon-only tunnel markers. */
+.memory-tunnel-entrance::after {
+  display: none;
+}
+
+.memory-tunnel-entrance > span {
+  position: absolute;
+  left: 50%;
+  top: 35%;
+  font-size: clamp(1.8rem, 3.4vw, 3.5rem);
+  filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .7));
+  transform: translate(-50%, -50%);
+}
+
+.memory-tunnel-entrance strong {
+  position: absolute;
+  left: 50%;
+  top: 53%;
+  display: block;
+  width: max-content;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  clip-path: none;
+  color: #fff4c9;
+  box-shadow: none;
+  font-size: clamp(.72rem, 1.45vw, 1.35rem);
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 2px 2px #321606, 0 0 5px #321606;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
 .wash-face-action { position: absolute; z-index: 4; left: 49%; top: 26%; width: 170px; height: 145px; pointer-events: none; transform: translate(-50%, -50%); }
 .wash-face-action strong { position: absolute; left: 50%; top: -32px; width: max-content; padding: 6px 10px; border-radius: 999px; background: white; color: #65417a; transform: translateX(-50%); }
 .wash-rag { position: absolute; z-index: 2; left: 50%; top: 50%; font-size: 3.4rem; animation: wash-rag-scrub .42s ease-in-out infinite alternate; }

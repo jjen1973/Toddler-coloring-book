@@ -882,7 +882,7 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome })
       </header>
       <section className="activity-doors" aria-label="Activity rabbit holes">
         <button type="button" className="activity-door coloring-door" onClick={onOpenColoring}>
-          <span className="door-icon" aria-hidden="true">🖍</span>
+          <span className="door-icon" aria-hidden="true">📖</span>
           <strong>Coloring Book</strong>
           <span className="door-knob" aria-hidden="true" />
         </button>
@@ -893,7 +893,7 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome })
           rel="noopener noreferrer"
           aria-label="Watch Shows on Tubi preschool, opens in a new tab"
         >
-          <span className="watch-shows-icon" aria-hidden="true"><span>▶</span></span>
+          <span className="watch-shows-icon" aria-hidden="true"><span>📺</span></span>
           <strong>Watch Shows</strong>
         </a>
         <button
@@ -905,9 +905,9 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome })
           <span className="memory-door-icon" aria-hidden="true">🧠</span>
           <strong>Memory</strong>
         </button>
-        {BALL_READY_ENABLED ? <button type="button" className="activity-door locked-door ball-ready-door" onClick={onOpenBallReady} aria-label="Enter right tunnel two to help get ready for the ball">
+        {BALL_READY_ENABLED ? <button type="button" className="activity-door locked-door ball-ready-door" onClick={onOpenBallReady} aria-label="Enter right tunnel two to help Lily">
           <span className="door-lock" aria-hidden="true">👗</span>
-          <strong>Ball Ready</strong>
+          <strong>Help Lily</strong>
         </button> : null}
         {futureDoors.map((door) => (
           <button type="button" className="activity-door locked-door" key={door.label} disabled aria-label={`${door.label} activity locked`}>
