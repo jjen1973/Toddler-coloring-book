@@ -2206,7 +2206,9 @@ svg {
 }
 
 .lily-tunnel-entrance {
-  left: 79%;
+  left: 64%;
+  top: 43%;
+  transform: translate(-50%, -50%) scale(.72);
 }
 
 .lily-tunnel-entrance > span {
@@ -2282,6 +2284,12 @@ svg {
     top: 26vw;
     width: 16vw;
     height: 28vw;
+  }
+
+  .memory-tunnel-entrance.lily-tunnel-entrance {
+    left: 63.5vw;
+    top: 26vw;
+    transform: translate(-50%, -50%) scale(.72);
   }
 }
 
