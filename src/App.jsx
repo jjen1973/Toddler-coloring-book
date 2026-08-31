@@ -936,17 +936,6 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome })
             <span aria-hidden="true">🧠</span>
             <strong>Memory</strong>
           </button>
-        ) : lockNumber === 4 ? (
-          <button
-            type="button"
-            className="deeper-door-lock deeper-door-lock-4 memory-tunnel-entrance lily-tunnel-entrance"
-            key={lockNumber}
-            onClick={onOpenBallReady}
-            aria-label="Enter deep tunnel one on the right to help Lily"
-          >
-            <span aria-hidden="true">👧</span>
-            <strong>Help Lily</strong>
-          </button>
         ) : (
           <button
             type="button"
