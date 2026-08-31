@@ -906,8 +906,8 @@ const wafflesStoryPages = [
 const deepTunnelDoors = [
   { id: 'deep-left-1', position: 1, activity: 'memory' },
   { id: 'deep-left-2', position: 2, activity: 'books' },
-  { id: 'deep-right-1', position: 3, activity: 'lily' },
-  { id: 'deep-right-2', position: 4, activity: 'locked' },
+  { id: 'deep-right-2', position: 3, activity: 'locked' },
+  { id: 'deep-right-1', position: 4, activity: 'lily' },
 ];
 
 function BooksPage({ onExit }) {
@@ -1072,7 +1072,7 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks
         ) : door.activity === 'lily' ? (
           <button
             type="button"
-            className={`deeper-door-lock deeper-door-lock-${door.position} memory-tunnel-entrance lily-tunnel-entrance`}
+            className={`deeper-door-lock deeper-door-lock-${door.position} ${door.id}-entrance memory-tunnel-entrance lily-tunnel-entrance`}
             key={door.id}
             onClick={onOpenBallReady}
             aria-label="Enter the first deep tunnel on the right to help Lily"
