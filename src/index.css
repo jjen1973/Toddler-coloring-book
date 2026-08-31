@@ -2880,5 +2880,38 @@ svg {
 .comb-hair-action strong { position: absolute; left: 50%; top: -12px; width: max-content; padding: 6px 10px; border-radius: 999px; background: white; color: #65417a; transform: translateX(-50%); }
 @keyframes comb-hair-stroke { from { transform: translate(-90%, -20%) rotate(-28deg); } to { transform: translate(20%, 150%) rotate(12deg); } }
 @media (max-width: 1000px) { .comb-hair-action { left: 50%; top: 25%; transform: translate(-50%, -35%) scale(.7); } }
+
+/* Lily is in the inner right opening: deep-right-1. The outer right opening stays locked. */
+.memory-tunnel-entrance.lily-tunnel-entrance {
+  left: 64%;
+  top: 43%;
+  transform: translate(-50%, -50%) scale(.72);
+}
+
+.memory-tunnel-entrance.lily-tunnel-entrance > span {
+  display: block;
+  left: 50%;
+  top: 35%;
+  width: clamp(38px, 5vw, 76px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: clamp(2px, .25vw, 4px) solid #f6d58b;
+  border-radius: 50%;
+  background: #f1dcff url('/pages/ball-ready/getting-ready-messy.png') 50% 17% / 350% auto no-repeat;
+  box-shadow: 0 4px 8px rgba(42, 17, 52, .55);
+  color: transparent;
+  font-size: 0;
+  line-height: 0;
+  text-indent: -9999px;
+  filter: none;
+}
+
+@media (max-width: 620px) {
+  .memory-tunnel-entrance.lily-tunnel-entrance {
+    left: 63.5vw;
+    top: 26vw;
+    transform: translate(-50%, -50%) scale(.72);
+  }
+}
 .face-clean-badge { position: absolute; z-index: 3; left: 49%; top: 13%; padding: 8px 14px; border-radius: 999px; background: rgba(255,255,255,.94); color: #5e3a70; font-weight: 900; transform: translateX(-50%); animation: face-clean-pop .45s ease-out; }
 @keyframes face-clean-pop { from { opacity: 0; transform: translateX(-50%) scale(.6); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
