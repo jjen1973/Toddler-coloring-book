@@ -720,7 +720,7 @@ function StartPage({ onEnterTunnel }) {
   );
 }
 
-const BALL_READY_ENABLED = import.meta.env.DEV;
+const BALL_READY_ENABLED = true;
 const futureDoors = [
   { label: 'Stories', icon: '★' },
 ];
