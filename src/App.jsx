@@ -978,9 +978,38 @@ const ballLayerAssets = [
   { slot: 'tiara', src: '/pages/ball-ready/layer-tiara-canvas.png', bunSrc: '/pages/ball-ready/layer-tiara-bun-canvas.png', label: 'Her silver and lavender tiara', layerClass: 'layer-tiara' },
 ];
 
+function BallroomDancerOverlay({ side }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const image = new Image();
+    image.onload = () => {
+      const sourceWidth = image.naturalWidth / 2;
+      canvas.width = sourceWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      context.drawImage(image, side === 'left' ? 0 : sourceWidth, 0, sourceWidth, image.naturalHeight, 0, 0, sourceWidth, image.naturalHeight);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      for (let index = 0; index < pixels.data.length; index += 4) {
+        const red = pixels.data[index];
+        const green = pixels.data[index + 1];
+        const blue = pixels.data[index + 2];
+        const lightest = Math.max(red, green, blue);
+        const darkest = Math.min(red, green, blue);
+        if (darkest > 218 && lightest - darkest < 19) pixels.data[index + 3] = 0;
+      }
+      context.putImageData(pixels, 0, 0);
+    };
+    image.src = '/pages/ball-ready/ballroom-child-dancers-v1.png';
+  }, [side]);
+
+  return <canvas ref={canvasRef} className={`ballroom-dancers-overlay ${side}`} aria-label={`Children dancing to Lily's ${side}`} />;
+}
+
 function BallReady({ family, onExit }) {
   const emptyMakeover = { face: 'dirty', hairCare: 'messy', hairstyle: null, dress: false, shoes: false, necklace: false, bow: false, tiara: false };
-  const [stage, setStage] = useState('dream');
+  const [stage, setStage] = useState('adventure');
   const [done, setDone] = useState([]);
   const [makeover, setMakeover] = useState(emptyMakeover);
   const [message, setMessage] = useState('');
@@ -1065,7 +1094,7 @@ function BallReady({ family, onExit }) {
     setMessage('');
     try {
       await family.awardBallReadyCompletion();
-      setStage('finished');
+      setStage('celebrating');
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -1073,10 +1102,40 @@ function BallReady({ family, onExit }) {
     }
   };
 
+  useEffect(() => {
+    if (stage !== 'celebrating') return undefined;
+    const ballroomTimer = window.setTimeout(() => setStage('finished'), 2400);
+    return () => window.clearTimeout(ballroomTimer);
+  }, [stage]);
+
+  if (stage === 'adventure') return (
+    <main className="ball-ready-page adventure-stage">
+      <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
+      <img src="/pages/ball-ready/getting-ready-messy.png" alt="Lily with a dirty face and messy hair asking for help" />
+      <img className="lily-room-rabbit" src="/pages/start-page/rabbit-runner.png" alt="The little white rabbit sitting near Lily's mirror" />
+      <div className="ball-dialogue lily-adventure-copy">
+        <h1>Hi, I am Lily!</h1>
+        <p>Help me on my adventures!</p>
+      </div>
+      <nav className="lily-adventure-grid" aria-label="Choose one of Lily's adventures">
+        <button type="button" className="lily-adventure-panel available" onClick={() => setStage('dream')}>
+          <span aria-hidden="true">👗</span>
+          <strong>Get me to the ball</strong>
+        </button>
+        {[1, 2, 3].map((adventureNumber) => (
+          <button type="button" className="lily-adventure-panel locked" disabled aria-label={`Future Lily adventure ${adventureNumber} locked`} key={adventureNumber}>
+            <span aria-hidden="true">🔒</span>
+          </button>
+        ))}
+      </nav>
+    </main>
+  );
+
   if (stage === 'dream') return (
     <main className="ball-ready-page dream-stage">
       <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
       <img src="/pages/ball-ready/ball-dream.png" alt="A girl dressed beautifully and ready for the ball" />
+      <img className="ball-dream-rabbit" src="/pages/start-page/rabbit-runner.png" alt="The little white rabbit sitting near the mirror" />
       <div className="ball-dialogue ball-dream-copy"><h1>My Ball Dream!</h1><p>Will you help me get ready?</p><button type="button" onClick={() => setStage('ready')}>Let's help!</button></div>
     </main>
   );
@@ -1085,7 +1144,13 @@ function BallReady({ family, onExit }) {
     <main className="ball-ready-page ready-stage">
       <button type="button" className="memory-back-button" onClick={onExit}>← Back to Tunnel</button>
       <div className={'ball-character-canvas ' + (makeover.hairstyle === 'bun' ? 'bun-character-state' : '')}>
-      <img src={stage === 'finished' ? '/pages/ball-ready/ball-dream.png' : gettingReadyImage} alt={stage === 'finished' ? 'The girl ready for the ball' : 'The girl showing every makeover choice selected so far'} />
+      <img src={stage === 'finished' ? '/pages/ball-ready/lily-ballroom-v1.png' : gettingReadyImage} alt={stage === 'finished' ? 'Lily fully dressed at the royal ball' : 'Lily showing every makeover choice selected so far'} />
+      {stage === 'finished' ? <>
+        <BallroomDancerOverlay side="left" />
+        <BallroomDancerOverlay side="right" />
+        <img className="ballroom-rabbit" src="/pages/start-page/rabbit-runner.png" alt="The little white rabbit enjoying the ball" />
+      </> : null}
+      {stage !== 'finished' && !makeover.dress ? <img className="ready-room-rabbit" src="/pages/start-page/rabbit-runner.png" alt="The little white rabbit sitting beneath the table" /> : null}
       {stage !== 'finished' ? ballLayerAssets.map((layer) => makeover[layer.slot] && !(usesBunDressState && layer.slot === 'dress') && !(usesBunDressShoesState && layer.slot === 'shoes') && !(usesBunNecklaceState && layer.slot === 'necklace') && !(usesBunTiaraState && layer.slot === 'tiara') ? (
         <img className={'character-layer ' + layer.layerClass} src={makeover.hairstyle === 'bun' ? layer.bunSrc : layer.src} alt={layer.label} key={layer.slot} />
       ) : null) : null}
@@ -1095,11 +1160,19 @@ function BallReady({ family, onExit }) {
       {activeItem ? <div className={'makeover-item-action action-' + activeItem.id} role="status"><span>{activeItem.icon}</span><strong>Adding {activeItem.label}!</strong></div> : null}
       {makeover.face === 'clean' && makeover.hairCare !== 'combed' && !washingFace ? <div className="face-clean-badge" aria-live="polite">✨ Face is clean! ✨</div> : null}
       </div>
-      {stage === 'finished' ? <div className="ball-dialogue"><h1>Ready for the Ball!</h1><p>Thank you! I feel wonderful!</p><button type="button" onClick={() => { setStage('ready'); setDone([]); setMakeover(emptyMakeover); }}>Play Again</button></div> : (
-        <aside className="ball-task-panel">
+      {stage === 'celebrating' ? (
+        <div className="lily-ready-celebration" role="status" aria-live="polite">
+          <div className="celebration-confetti" aria-hidden="true">{Array.from({ length: 28 }, (_, index) => <span key={index} />)}</div>
+          <h1>Wow! I Look Beautiful! Thank You!</h1>
+        </div>
+      ) : stage === 'finished' ? <div className="ball-dialogue ball-finale-copy"><button type="button" onClick={() => { setStage('ready'); setDone([]); setMakeover(emptyMakeover); }}>Play Again</button></div> : (
+        <>
+        <div className="ball-ready-instruction">
           <h1>Help Me Get Ready</h1>
           <p>Tap each job and item.</p>
-          <div className="ball-task-grid">{ballTasks.map((task) => {
+        </div>
+        <aside className="ball-task-panel">
+          <div className="ball-task-grid">{ballTasks.filter((task) => task.id !== 'braids' && task.id !== 'bow').map((task) => {
             const isPurchased = owned.includes('ball-' + task.id);
             const isOwned = task.free || isPurchased;
             const isUnlocked = isTaskUnlocked(task.id);
@@ -1109,6 +1182,7 @@ function BallReady({ family, onExit }) {
           {message ? <p className="ball-shop-message" role="alert">{message}</p> : null}
           <button type="button" className="ball-finish-button" disabled={!ready || finishing} onClick={finishGettingReady}>{finishing ? 'Saving...' : "I'm Ready!"}</button>
         </aside>
+        </>
       )}
     </main>
   );
