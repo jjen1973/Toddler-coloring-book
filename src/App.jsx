@@ -857,7 +857,129 @@ function MemoryGame({ onExit, family }) {
   );
 }
 
-function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome }) {
+const tookieStoryPages = [
+  {
+    image: '/pages/tookie-book/pages-3-4.png',
+    alt: 'Tookie calmly watches the toddlers and guards the stairs',
+    text: 'Tookie was the Official Baby Watcher. When Theo tugged her tail, she gave a gentle mew and walked away. When Mabel toddled toward the stairs, Tookie became a furry little gate.',
+  },
+  {
+    image: '/pages/tookie-book/pages-5-6.png',
+    alt: 'Tookie sits patiently while the toddlers play with toys',
+    text: 'When blocks tumbled everywhere, Tookie stayed patient. Her steady purr softened the loudest wiggles until the whole room felt calm.',
+  },
+  {
+    image: '/pages/tookie-book/pages-7-9.png',
+    alt: 'Tookie naps safely between two sleeping toddlers',
+    text: 'At naptime, Tookie purred her lullaby. One by one, the children fell asleep. She stayed beside them until morning, curled up like a promise kept.',
+  },
+];
+
+const wafflesStoryPages = [
+  {
+    image: '/pages/waffles-book/breakfast.png',
+    alt: 'Waffles considers clover, a dandelion, and a suspicious mushroom for breakfast',
+    text: 'One sunny morning, Waffles woke with a very noisy tummy. Clover was too leafy. The dandelion was too yellow. Then a mushroom appeared to stare back at him. “Nope,” said Waffles, hopping away very quickly.',
+  },
+  {
+    image: '/pages/waffles-book/berry-warning.png',
+    alt: 'Pip warns Waffles not to eat the enormous red berry',
+    text: 'Waffles found the biggest, reddest berry he had ever seen. “DON’T EAT THAT!” cried a tiny blue bird. Her name was Pip. She explained that the suspicious berry would make his tummy hurt.',
+  },
+  {
+    image: '/pages/waffles-book/puddle.png',
+    alt: 'A dripping wet Waffles climbs out of a puddle while Pip tries not to laugh',
+    text: 'Pip offered to find him a safe breakfast. She flew over a log and across a puddle. Waffles jumped across it—mostly. SPLASH! “You look like a mop,” said Pip. “I am a majestic forest rabbit,” said Waffles.',
+  },
+  {
+    image: '/pages/waffles-book/strawberries.png',
+    alt: 'Pip playfully removes a dab of strawberry from Waffles nose',
+    text: 'Then Pip found wild strawberries. Waffles’ ears stood straight up. “I think I have found true love.” Soon his cheeks were full and strawberry covered his nose. Pip pecked it away and flew off laughing.',
+  },
+  {
+    image: '/pages/waffles-book/friends.png',
+    alt: 'Waffles and Pip head down a sunny woodland path together',
+    text: 'Still hungry, Waffles followed Pip to find lunch. “Are you sure you know what you’re doing?” he asked. “Absolutely not,” Pip said. “Perfect!” And off went two new friends with absolutely no plan at all.',
+  },
+];
+
+const deepTunnelDoors = [
+  { id: 'deep-left-1', position: 1, activity: 'memory' },
+  { id: 'deep-left-2', position: 2, activity: 'books' },
+  { id: 'deep-right-2', position: 3, activity: 'locked' },
+  { id: 'deep-right-1', position: 4, activity: BALL_READY_ENABLED ? 'lily' : 'locked' },
+];
+
+function BooksPage({ onExit }) {
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [pageIndex, setPageIndex] = useState(-1);
+  const [message, setMessage] = useState('');
+
+  if (selectedBook) {
+    const isWaffles = selectedBook === 'waffles';
+    const storyPages = isWaffles ? wafflesStoryPages : tookieStoryPages;
+    const cover = isWaffles ? '/pages/waffles-book/cover.png' : '/pages/tookie-book/cover.png';
+    const title = isWaffles ? 'Waffles the White Rabbit and the Very Suspicious Berry' : 'Tookie the Babysitter Cat';
+    const isCover = pageIndex < 0;
+    const page = storyPages[Math.max(0, pageIndex)];
+    return (
+      <main className="story-book-page">
+        <button type="button" className="story-back-button" onClick={() => { setSelectedBook(null); setPageIndex(-1); }}>
+          <span aria-hidden="true">&#8617;</span> Book Choices
+        </button>
+        <section className="tookie-reader" aria-label={`${title} picture book`}>
+          {isCover ? (
+            <button type="button" className="tookie-cover-button" onClick={() => setPageIndex(0)} aria-label={`Open ${title}`}>
+              <img src={cover} alt={`${title} book cover`} />
+              <span>Tap to open</span>
+            </button>
+          ) : (
+            <article className="tookie-story-card">
+              <img src={page.image} alt={page.alt} />
+              <div className="tookie-story-text">
+                <p>{page.text}</p>
+                {pageIndex === storyPages.length - 1 ? <strong>The End</strong> : null}
+              </div>
+            </article>
+          )}
+        </section>
+        {!isCover ? (
+          <nav className="story-page-controls" aria-label="Story pages">
+            <button type="button" disabled={pageIndex === 0} onClick={() => setPageIndex((index) => index - 1)}>Back</button>
+            <span>{pageIndex + 1} of {storyPages.length}</span>
+            <button type="button" disabled={pageIndex === storyPages.length - 1} onClick={() => setPageIndex((index) => index + 1)}>Next</button>
+          </nav>
+        ) : null}
+      </main>
+    );
+  }
+
+  return (
+    <main className="books-choice-page">
+      <button type="button" className="story-back-button" onClick={onExit}><span aria-hidden="true">&#8617;</span> Tunnel</button>
+      <header>
+        <p>Pick a picture</p>
+        <h1>Books</h1>
+      </header>
+      <section className="book-picture-choices" aria-label="Choose a picture book">
+        <button type="button" className="book-picture-choice" onClick={() => setSelectedBook('tookie')}>
+          <img src="/pages/tookie-book/cover.png" alt="Orange cat" />
+          <strong>Cat</strong>
+        </button>
+        <button type="button" className="book-picture-choice" onClick={() => setSelectedBook('waffles')}>
+          <img src="/pages/waffles-book/cover.png" alt="Waffles the white rabbit" />
+          <strong>Rabbit</strong>
+        </button>
+        <button type="button" className="book-picture-choice locked-book-choice" disabled aria-label="Locked book">
+          <span aria-hidden="true">&#128274;</span>
+        </button>
+      </section>
+      <p className="book-choice-message" aria-live="polite">{message}</p>
+    </main>
+  );
+}
+
+function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks, onGoHome }) {
   const [deepTunnelStage, setDeepTunnelStage] = useState('waiting');
 
   useEffect(() => {
@@ -925,24 +1047,46 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onGoHome })
         <span>Go deeper!</span>
       </button>
       <section className="deeper-door-locks" aria-label="Locked activity tunnels">
-        {[1, 2, 3, 4].map((lockNumber) => lockNumber === 1 ? (
+        {deepTunnelDoors.map((door) => door.activity === 'memory' ? (
           <button
             type="button"
-            className="deeper-door-lock deeper-door-lock-1 memory-tunnel-entrance"
-            key={lockNumber}
+            className={`deeper-door-lock deeper-door-lock-${door.position} memory-tunnel-entrance`}
+            key={door.id}
             onClick={onOpenMemory}
-            aria-label="Enter left tunnel two to play Memory Match"
+            aria-label="Enter deep tunnel one on the left to play Memory Match"
           >
             <span aria-hidden="true">🧠</span>
             <strong>Memory</strong>
           </button>
+        ) : door.activity === 'books' ? (
+          <button
+            type="button"
+            className={`deeper-door-lock deeper-door-lock-${door.position} memory-tunnel-entrance books-tunnel-entrance`}
+            key={door.id}
+            onClick={onOpenBooks}
+            aria-label="Enter deep tunnel two on the left to choose a book"
+          >
+            <span aria-hidden="true">&#128218;</span>
+            <strong>Books</strong>
+          </button>
+        ) : door.activity === 'lily' ? (
+          <button
+            type="button"
+            className={`deeper-door-lock deeper-door-lock-${door.position} memory-tunnel-entrance lily-tunnel-entrance`}
+            key={door.id}
+            onClick={onOpenBallReady}
+            aria-label="Enter the first deep tunnel on the right to help Lily"
+          >
+            <span aria-hidden="true">👧</span>
+            <strong>Help Lily</strong>
+          </button>
         ) : (
           <button
             type="button"
-            className={`deeper-door-lock deeper-door-lock-${lockNumber}`}
-            key={lockNumber}
+            className={`deeper-door-lock deeper-door-lock-${door.position}`}
+            key={door.id}
             disabled
-            aria-label={`Activity tunnel ${lockNumber} is locked`}
+            aria-label={`${door.id.replaceAll('-', ' ')} is locked`}
           >
             <span aria-hidden="true">&#128274;</span>
           </button>
@@ -1189,7 +1333,7 @@ function BallReady({ family, onExit }) {
 }
 
 function ToddlerApp({ family }) {
-  const validRoutes = ['/', '/tunnel', '/coloring', '/memory', ...(BALL_READY_ENABLED ? ['/ball-ready'] : [])];
+  const validRoutes = ['/', '/tunnel', '/coloring', '/memory', '/books', ...(BALL_READY_ENABLED ? ['/ball-ready'] : [])];
   const getRoute = () => (validRoutes.includes(window.location.pathname) ? window.location.pathname : '/');
   const [route, setRoute] = useState(getRoute);
 
@@ -1206,7 +1350,7 @@ function ToddlerApp({ family }) {
   };
 
   if (route === '/tunnel') {
-    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onOpenBallReady={() => navigate('/ball-ready')} onGoHome={() => navigate('/')} />;
+    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onOpenBallReady={() => navigate('/ball-ready')} onOpenBooks={() => navigate('/books')} onGoHome={() => navigate('/')} />;
   }
 
   if (route === '/coloring') {
@@ -1215,6 +1359,10 @@ function ToddlerApp({ family }) {
 
   if (route === '/memory') {
     return <MemoryGame family={family} onExit={() => navigate('/tunnel')} />;
+  }
+
+  if (route === '/books') {
+    return <BooksPage onExit={() => navigate('/tunnel')} />;
   }
 
   if (BALL_READY_ENABLED && route === '/ball-ready') {
