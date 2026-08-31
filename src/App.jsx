@@ -907,7 +907,7 @@ const deepTunnelDoors = [
   { id: 'deep-left-1', position: 1, activity: 'memory' },
   { id: 'deep-left-2', position: 2, activity: 'books' },
   { id: 'deep-right-2', position: 3, activity: 'locked' },
-  { id: 'deep-right-1', position: 4, activity: 'locked' },
+  { id: 'deep-right-1', position: 4, activity: 'lily' },
 ];
 
 function BooksPage({ onExit }) {
