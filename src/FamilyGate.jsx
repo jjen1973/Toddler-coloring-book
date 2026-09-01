@@ -12,6 +12,43 @@ const errorMessage = (error) => ({
   'permission-denied': 'The Firestore security rules have not been published yet.',
 }[error?.code] || error?.message || 'Something went wrong. Please try again.');
 
+const writeCurrencyTransaction = (transaction, childReference, {
+  type,
+  currency,
+  amount,
+  reason,
+  itemId,
+  balanceBefore,
+  balanceAfter,
+}) => {
+  const transactionReference = doc(collection(childReference, 'transactions'));
+  transaction.set(transactionReference, {
+    type,
+    currency,
+    amount,
+    reason,
+    ...(itemId ? { itemId } : {}),
+    createdAt: serverTimestamp(),
+    balanceBefore,
+    balanceAfter,
+  });
+};
+
+const currencyTrackingInitialization = (data) => (
+  Object.prototype.hasOwnProperty.call(data, 'currencyTrackingStartedAt')
+    ? {}
+    : {
+      currencyTrackingStartedAt: serverTimestamp(),
+      currencyTrackingComplete: false,
+      openingCarrotsBalance: data.carrots || 0,
+      openingGoldCarrotsBalance: data.goldCarrots || 0,
+      trackedCarrotsEarned: data.trackedCarrotsEarned || 0,
+      trackedCarrotsSpent: data.trackedCarrotsSpent || 0,
+      trackedGoldCarrotsEarned: data.trackedGoldCarrotsEarned || 0,
+      trackedGoldCarrotsSpent: data.trackedGoldCarrotsSpent || 0,
+    }
+);
+
 export default function FamilyGate({ children }) {
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
@@ -41,6 +78,11 @@ export default function FamilyGate({ children }) {
         id: item.id,
         carrots: 0,
         goldCarrots: 0,
+        goldStars: 0,
+        trackedCarrotsEarned: 0,
+        trackedCarrotsSpent: 0,
+        trackedGoldCarrotsEarned: 0,
+        trackedGoldCarrotsSpent: 0,
         ...item.data(),
       }));
       const remembered = localStorage.getItem('selectedChild:' + user.uid);
@@ -77,7 +119,21 @@ export default function FamilyGate({ children }) {
     setBusy(true);
     setError('');
     try {
-      const data = { name, carrots: 0, goldCarrots: 0, createdAt: serverTimestamp() };
+      const data = {
+        name,
+        carrots: 0,
+        goldCarrots: 0,
+        goldStars: 0,
+        currencyTrackingStartedAt: serverTimestamp(),
+        currencyTrackingComplete: true,
+        openingCarrotsBalance: 0,
+        openingGoldCarrotsBalance: 0,
+        trackedCarrotsEarned: 0,
+        trackedCarrotsSpent: 0,
+        trackedGoldCarrotsEarned: 0,
+        trackedGoldCarrotsSpent: 0,
+        createdAt: serverTimestamp(),
+      };
       const reference = await addDoc(collection(db, 'parents', user.uid, 'children'), data);
       chooseChild({ id: reference.id, ...data });
       setChildName('');
@@ -99,14 +155,39 @@ export default function FamilyGate({ children }) {
       if (rewarded.includes(letter)) return;
       const nextRewards = [...rewarded, letter];
       const completedBook = nextRewards.length >= 26 && !data.coloringBookGoldAwarded;
+      const carrotsBefore = data.carrots || 0;
+      const carrotsAfter = carrotsBefore + 1;
+      const goldCarrotsBefore = data.goldCarrots || 0;
+      const goldCarrotsAfter = goldCarrotsBefore + (completedBook ? 1 : 0);
       transaction.update(childReference, {
+        ...currencyTrackingInitialization(data),
         coloringRewards: nextRewards,
-        carrots: (data.carrots || 0) + 1,
+        carrots: carrotsAfter,
+        trackedCarrotsEarned: (data.trackedCarrotsEarned || 0) + 1,
         ...(completedBook ? {
-          goldCarrots: (data.goldCarrots || 0) + 1,
+          goldCarrots: goldCarrotsAfter,
+          trackedGoldCarrotsEarned: (data.trackedGoldCarrotsEarned || 0) + 1,
           coloringBookGoldAwarded: true,
         } : {}),
       });
+      writeCurrencyTransaction(transaction, childReference, {
+        type: 'earn',
+        currency: 'carrots',
+        amount: 1,
+        reason: 'coloring-page',
+        balanceBefore: carrotsBefore,
+        balanceAfter: carrotsAfter,
+      });
+      if (completedBook) {
+        writeCurrencyTransaction(transaction, childReference, {
+          type: 'earn',
+          currency: 'goldCarrots',
+          amount: 1,
+          reason: 'coloring-book-complete',
+          balanceBefore: goldCarrotsBefore,
+          balanceAfter: goldCarrotsAfter,
+        });
+      }
     });
   };
 
@@ -120,12 +201,39 @@ export default function FamilyGate({ children }) {
       const completed = Array.isArray(data.memoryCompletedLevels) ? data.memoryCompletedLevels : [];
       if (completed.includes(level)) return;
       const earnsGoldCarrot = level % 5 === 0;
+      const carrotsBefore = data.carrots || 0;
+      const carrotsAfter = carrotsBefore + 1;
+      const goldCarrotsBefore = data.goldCarrots || 0;
+      const goldCarrotsAfter = goldCarrotsBefore + (earnsGoldCarrot ? 1 : 0);
       transaction.update(childReference, {
+        ...currencyTrackingInitialization(data),
         memoryCompletedLevels: [...completed, level],
         memoryUnlockedLevel: Math.min(maxLevel, Math.max(data.memoryUnlockedLevel || 1, level + 1)),
-        carrots: (data.carrots || 0) + 1,
-        ...(earnsGoldCarrot ? { goldCarrots: (data.goldCarrots || 0) + 1 } : {}),
+        carrots: carrotsAfter,
+        trackedCarrotsEarned: (data.trackedCarrotsEarned || 0) + 1,
+        ...(earnsGoldCarrot ? {
+          goldCarrots: goldCarrotsAfter,
+          trackedGoldCarrotsEarned: (data.trackedGoldCarrotsEarned || 0) + 1,
+        } : {}),
       });
+      writeCurrencyTransaction(transaction, childReference, {
+        type: 'earn',
+        currency: 'carrots',
+        amount: 1,
+        reason: 'memory-level',
+        balanceBefore: carrotsBefore,
+        balanceAfter: carrotsAfter,
+      });
+      if (earnsGoldCarrot) {
+        writeCurrencyTransaction(transaction, childReference, {
+          type: 'earn',
+          currency: 'goldCarrots',
+          amount: 1,
+          reason: 'memory-level-milestone',
+          balanceBefore: goldCarrotsBefore,
+          balanceAfter: goldCarrotsAfter,
+        });
+      }
     });
   };
 
@@ -141,11 +249,30 @@ export default function FamilyGate({ children }) {
       if ((data.carrots || 0) < carrotCost || (data.goldCarrots || 0) < goldCost) {
         throw new Error('Earn a few more carrots to buy this item.');
       }
+      const carrotsBefore = data.carrots || 0;
+      const carrotsAfter = carrotsBefore - carrotCost;
+      const goldCarrotsBefore = data.goldCarrots || 0;
+      const goldCarrotsAfter = goldCarrotsBefore - goldCost;
       transaction.update(childReference, {
+        ...((carrotCost > 0 || goldCost > 0) ? currencyTrackingInitialization(data) : {}),
         ownedItems: [...owned, itemId],
-        carrots: (data.carrots || 0) - carrotCost,
-        goldCarrots: (data.goldCarrots || 0) - goldCost,
+        carrots: carrotsAfter,
+        goldCarrots: goldCarrotsAfter,
+        ...(carrotCost > 0 ? { trackedCarrotsSpent: (data.trackedCarrotsSpent || 0) + carrotCost } : {}),
+        ...(goldCost > 0 ? { trackedGoldCarrotsSpent: (data.trackedGoldCarrotsSpent || 0) + goldCost } : {}),
       });
+      if (carrotCost > 0) {
+        writeCurrencyTransaction(transaction, childReference, {
+          type: 'spend', currency: 'carrots', amount: carrotCost, reason: 'purchase-item', itemId,
+          balanceBefore: carrotsBefore, balanceAfter: carrotsAfter,
+        });
+      }
+      if (goldCost > 0) {
+        writeCurrencyTransaction(transaction, childReference, {
+          type: 'spend', currency: 'goldCarrots', amount: goldCost, reason: 'purchase-item', itemId,
+          balanceBefore: goldCarrotsBefore, balanceAfter: goldCarrotsAfter,
+        });
+      }
     });
     return true;
   };
@@ -158,10 +285,25 @@ export default function FamilyGate({ children }) {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
       if (data.ballReadyCompletionAwarded) return;
+      const carrotsBefore = data.carrots || 0;
+      const carrotsAfter = carrotsBefore + 5;
+      const goldCarrotsBefore = data.goldCarrots || 0;
+      const goldCarrotsAfter = goldCarrotsBefore + 1;
       transaction.update(childReference, {
+        ...currencyTrackingInitialization(data),
         ballReadyCompletionAwarded: true,
-        carrots: (data.carrots || 0) + 5,
-        goldCarrots: (data.goldCarrots || 0) + 1,
+        carrots: carrotsAfter,
+        goldCarrots: goldCarrotsAfter,
+        trackedCarrotsEarned: (data.trackedCarrotsEarned || 0) + 5,
+        trackedGoldCarrotsEarned: (data.trackedGoldCarrotsEarned || 0) + 1,
+      });
+      writeCurrencyTransaction(transaction, childReference, {
+        type: 'earn', currency: 'carrots', amount: 5, reason: 'ball-ready-complete',
+        balanceBefore: carrotsBefore, balanceAfter: carrotsAfter,
+      });
+      writeCurrencyTransaction(transaction, childReference, {
+        type: 'earn', currency: 'goldCarrots', amount: 1, reason: 'ball-ready-complete',
+        balanceBefore: goldCarrotsBefore, balanceAfter: goldCarrotsAfter,
       });
     });
     return true;
@@ -196,7 +338,11 @@ export default function FamilyGate({ children }) {
         {profiles.length ? <div className='child-grid'>{profiles.map((profile) => (
           <button className='child-choice' type='button' key={profile.id} onClick={() => chooseChild(profile)}>
             <strong>{profile.name}</strong>
-            <small><span>🥕 {profile.carrots}</span><span>✨🥕 {profile.goldCarrots}</span></small>
+            <small>
+              <span aria-label={`${profile.carrots} carrots`}>🥕 {profile.carrots}</span>
+              <span className='gold-carrot-balance' aria-label={`${profile.goldCarrots} gold carrots`}><span className='gold-carrot-icon' aria-hidden='true'>🥕</span> {profile.goldCarrots}</span>
+              <span className='gold-star-balance' aria-label={`${profile.goldStars || 0} gold stars`}><span className='gold-star-icon' aria-hidden='true'>★</span> {profile.goldStars || 0}</span>
+            </small>
           </button>
         ))}</div> : <p>Add your first child to begin.</p>}
         <form className='add-child-form' onSubmit={addChild}>
@@ -212,9 +358,10 @@ export default function FamilyGate({ children }) {
   return (
     <>
       <aside className='family-toolbar' aria-label='Family account'>
-        <span>Playing as <strong>{selected.name}</strong></span>
-        <span className='currency-pill'>🥕 {selected.carrots}</span>
-        <span className='currency-pill gold'>✨🥕 {selected.goldCarrots}</span>
+        <span className='family-player'>Playing as <strong>{selected.name}</strong></span>
+        <span className='currency-pill' aria-label={`${selected.carrots} carrots`}>🥕 {selected.carrots}</span>
+        <span className='currency-pill gold' aria-label={`${selected.goldCarrots} gold carrots`}><span className='gold-carrot-icon' aria-hidden='true'>🥕</span> {selected.goldCarrots}</span>
+        <span className='currency-pill star' aria-label={`${selected.goldStars || 0} gold stars`}><span className='gold-star-icon' aria-hidden='true'>★</span> {selected.goldStars || 0}</span>
         <button type='button' onClick={() => { localStorage.removeItem('selectedChild:' + user.uid); setSelected(null); }}>Switch child</button>
         <button type='button' onClick={() => signOut(auth)}>Sign out</button>
       </aside>

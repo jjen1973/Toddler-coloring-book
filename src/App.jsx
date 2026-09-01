@@ -986,7 +986,7 @@ function BooksPage({ onExit }) {
   );
 }
 
-function PurchaseConfirmationDialog({ icon, title, message, confirmLabel, busy, onCancel, onConfirm }) {
+function PurchaseConfirmationDialog({ icon, title, message, confirmLabel, cancelLabel, busy, busyLabel = 'Purchasing...', noticeActionLabel, onNoticeAction, onCancel, onConfirm }) {
   return (
     <div className="purchase-confirmation-backdrop" role="presentation">
       <section className="purchase-confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="purchase-confirmation-title">
@@ -994,10 +994,19 @@ function PurchaseConfirmationDialog({ icon, title, message, confirmLabel, busy, 
         <h2 id="purchase-confirmation-title">{title}</h2>
         <p>{message}</p>
         <div className="purchase-confirmation-actions">
-          <button type="button" onClick={onCancel} disabled={busy}>Not yet</button>
-          <button type="button" className="confirm" onClick={onConfirm} disabled={busy}>
-            {busy ? 'Unlocking...' : confirmLabel}
-          </button>
+          {onConfirm ? (
+            <>
+              <button type="button" onClick={onCancel} disabled={busy}>{cancelLabel || 'Not yet'}</button>
+              <button type="button" className="confirm" onClick={onConfirm} disabled={busy}>
+                {busy ? busyLabel : confirmLabel}
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="leave" onClick={onCancel}>{cancelLabel || 'Leave'}</button>
+              {onNoticeAction ? <button type="button" className="ask-parent" onClick={onNoticeAction}>{noticeActionLabel}</button> : null}
+            </>
+          )}
         </div>
       </section>
     </div>
@@ -1009,6 +1018,7 @@ function TunnelPage({ family, onOpenColoring, onOpenMemory, onOpenBallReady, onO
   const [booksMessage, setBooksMessage] = useState('');
   const [unlockingBooks, setUnlockingBooks] = useState(false);
   const [confirmBooksPurchase, setConfirmBooksPurchase] = useState(false);
+  const [booksParentNotice, setBooksParentNotice] = useState(false);
   const booksUnlocked = (family?.child?.ownedItems || []).includes('books-tunnel');
 
   const openOrUnlockBooks = async () => {
@@ -1017,7 +1027,7 @@ function TunnelPage({ family, onOpenColoring, onOpenMemory, onOpenBallReady, onO
       return;
     }
     if ((family?.child?.carrots || 0) < 2) {
-      setBooksMessage('Earn 2 carrots to unlock Books.');
+      setBooksMessage('Go play another activity and earn some more!');
       return;
     }
     setBooksMessage('');
@@ -1155,14 +1165,32 @@ function TunnelPage({ family, onOpenColoring, onOpenMemory, onOpenBallReady, onO
           </button>
         ))}
       </section>
-      {booksMessage ? <p className="deep-tunnel-message" role="status">{booksMessage}</p> : null}
+      {booksMessage ? (
+        <PurchaseConfirmationDialog
+          icon="🥕"
+          title="You need 2 carrots"
+          message={booksMessage}
+          onCancel={() => setBooksMessage('')}
+          noticeActionLabel="Ask Parent"
+          onNoticeAction={() => { setBooksMessage(''); setBooksParentNotice(true); }}
+        />
+      ) : null}
+      {booksParentNotice ? (
+        <PurchaseConfirmationDialog
+          icon="⭐"
+          title="Ask a Parent"
+          message="The parent shop is coming soon!"
+          onCancel={() => setBooksParentNotice(false)}
+        />
+      ) : null}
       {confirmBooksPurchase ? (
         <PurchaseConfirmationDialog
-          icon="\uD83D\uDCDA"
+          icon="📚"
           title="Unlock Books?"
-          message="Spend 2 carrots?"
-          confirmLabel="\uD83E\uDD55 Spend 2"
+          message="Costs 2 carrots"
+          confirmLabel="🥕 Unlock"
           busy={unlockingBooks}
+          busyLabel="Unlocking..."
           onCancel={() => setConfirmBooksPurchase(false)}
           onConfirm={purchaseBooks}
         />
@@ -1236,6 +1264,10 @@ function BallReady({ family, onExit }) {
   const [washingFace, setWashingFace] = useState(false);
   const [combingHair, setCombingHair] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
+  const [pendingPurchase, setPendingPurchase] = useState(null);
+  const [purchaseNotice, setPurchaseNotice] = useState(null);
+  const [parentPurchaseNotice, setParentPurchaseNotice] = useState(false);
+  const [purchasingItem, setPurchasingItem] = useState(false);
   const owned = family?.child?.ownedItems || [];
   const required = ['wash', 'comb', 'dress', 'shoes', 'necklace', 'tiara'];
   const ready = required.every((id) => done.includes(id)) && (done.includes('bun') || done.includes('braids'));
@@ -1252,20 +1284,7 @@ function BallReady({ family, onExit }) {
     return false;
   };
 
-  const useItem = async (task) => {
-    setMessage('');
-    if (!isTaskUnlocked(task.id)) {
-      setMessage('Finish the glowing steps first to unlock this item.');
-      return;
-    }
-    if (!task.free && !owned.includes('ball-' + task.id)) {
-      try {
-        await family.purchaseItem('ball-' + task.id, task.carrots || 0, task.gold || 0);
-      } catch (error) {
-        setMessage(error.message);
-        return;
-      }
-    }
+  const applyItem = async (task) => {
     if (task.id === 'wash') {
       setWashingFace(true);
       await new Promise((resolve) => window.setTimeout(resolve, 1600));
@@ -1288,6 +1307,47 @@ function BallReady({ family, onExit }) {
       const withoutOtherHair = task.choice === 'hair' ? current.filter((id) => id !== 'bun') : task.id === 'bun' ? current.filter((id) => id !== 'braids') : current;
       return withoutOtherHair.includes(task.id) ? withoutOtherHair : [...withoutOtherHair, task.id];
     });
+  };
+
+  const useItem = async (task) => {
+    setMessage('');
+    if (!isTaskUnlocked(task.id)) {
+      setMessage('Finish the glowing steps first to unlock this item.');
+      return;
+    }
+    if (!task.free && !owned.includes('ball-' + task.id)) {
+      const currency = task.gold ? 'gold carrots' : 'carrots';
+      const cost = task.gold || task.carrots || 0;
+      const balance = task.gold ? (family?.child?.goldCarrots || 0) : (family?.child?.carrots || 0);
+      if (balance < cost) {
+        setPurchaseNotice({
+          icon: task.gold ? '\uD83E\uDD55\u2728' : '\uD83E\uDD55',
+          title: `You need ${cost} ${currency}`,
+          message: 'Go play another activity and earn some more!',
+        });
+        return;
+      }
+      setPendingPurchase(task);
+      return;
+    }
+    await applyItem(task);
+  };
+
+  const confirmItemPurchase = async () => {
+    const task = pendingPurchase;
+    if (!task) return;
+    setPurchasingItem(true);
+    setMessage('');
+    try {
+      await family.purchaseItem('ball-' + task.id, task.carrots || 0, task.gold || 0);
+      setPendingPurchase(null);
+      await applyItem(task);
+    } catch (error) {
+      setPendingPurchase(null);
+      setPurchaseNotice({ icon: '\uD83E\uDD55', title: 'Not enough carrots yet', message: 'Go play another activity and earn some more!' });
+    } finally {
+      setPurchasingItem(false);
+    }
   };
 
   const usesBunDressState = makeover.hairstyle === 'bun' && makeover.dress;
@@ -1403,6 +1463,35 @@ function BallReady({ family, onExit }) {
         </aside>
         </>
       )}
+      {pendingPurchase ? (
+        <PurchaseConfirmationDialog
+          icon={pendingPurchase.icon}
+          title={`Buy ${pendingPurchase.label}?`}
+          message={pendingPurchase.gold ? `Spend ${pendingPurchase.gold} gold carrot${pendingPurchase.gold === 1 ? '' : 's'}?` : `Spend ${pendingPurchase.carrots} carrots?`}
+          confirmLabel={pendingPurchase.gold ? `Spend ${pendingPurchase.gold} gold carrot` : `\uD83E\uDD55 Spend ${pendingPurchase.carrots}`}
+          busy={purchasingItem}
+          onCancel={() => setPendingPurchase(null)}
+          onConfirm={confirmItemPurchase}
+        />
+      ) : null}
+      {purchaseNotice ? (
+        <PurchaseConfirmationDialog
+          icon={purchaseNotice.icon}
+          title={purchaseNotice.title}
+          message={purchaseNotice.message}
+          onCancel={() => setPurchaseNotice(null)}
+          noticeActionLabel="Ask Parent"
+          onNoticeAction={() => { setPurchaseNotice(null); setParentPurchaseNotice(true); }}
+        />
+      ) : null}
+      {parentPurchaseNotice ? (
+        <PurchaseConfirmationDialog
+          icon="\u2B50"
+          title="Ask a Parent"
+          message="The parent shop is coming soon!"
+          onCancel={() => setParentPurchaseNotice(false)}
+        />
+      ) : null}
     </main>
   );
 }
@@ -1433,7 +1522,7 @@ function ToddlerApp({ family }) {
   }
 
   if (route === '/memory') {
-    return <MemoryGame family={family} onExit={() => navigate('/tunnel')} />;
+    return <MemoryGame key={family?.child?.id || 'memory-player'} family={family} onExit={() => navigate('/tunnel')} />;
   }
 
   if (route === '/books') {
