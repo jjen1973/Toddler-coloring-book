@@ -60,6 +60,7 @@ export default function FamilyGate({ children }) {
   const [childName, setChildName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [copiedDeveloperId, setCopiedDeveloperId] = useState('');
 
   useEffect(() => onAuthStateChanged(auth, (nextUser) => {
     setUser(nextUser);
@@ -96,6 +97,16 @@ export default function FamilyGate({ children }) {
   const chooseChild = (profile) => {
     localStorage.setItem('selectedChild:' + user.uid, profile.id);
     setSelected(profile);
+  };
+
+  const copyDeveloperId = async (label, value) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedDeveloperId(label);
+      window.setTimeout(() => setCopiedDeveloperId((current) => (current === label ? '' : current)), 1800);
+    } catch {
+      setError('Could not copy that ID. Please select and copy it manually.');
+    }
   };
 
   const submitAccount = async (event) => {
@@ -349,6 +360,30 @@ export default function FamilyGate({ children }) {
           <label>Child's first name<input value={childName} onChange={(event) => setChildName(event.target.value)} maxLength='30' required /></label>
           <button disabled={busy}>{busy ? 'Adding...' : 'Add child'}</button>
         </form>
+        <details className='developer-info'>
+          <summary>Account / Developer Info</summary>
+          <p className='developer-info-note'>Firebase identifiers for account support and development.</p>
+          <div className='developer-id-row'>
+            <div>
+              <strong>Parent Auth UID</strong>
+              <code>{user.uid}</code>
+            </div>
+            <button type='button' onClick={() => copyDeveloperId('parent', user.uid)}>
+              {copiedDeveloperId === 'parent' ? 'Copied!' : 'Copy ID'}
+            </button>
+          </div>
+          {profiles.map((profile) => (
+            <div className='developer-id-row' key={`developer-${profile.id}`}>
+              <div>
+                <strong>Child: {profile.name}</strong>
+                <code>{profile.id}</code>
+              </div>
+              <button type='button' onClick={() => copyDeveloperId(profile.id, profile.id)}>
+                {copiedDeveloperId === profile.id ? 'Copied!' : 'Copy ID'}
+              </button>
+            </div>
+          ))}
+        </details>
         {error ? <p className='family-error' role='alert'>{error}</p> : null}
         <button className='family-link' type='button' onClick={() => signOut(auth)}>Sign out</button>
       </section>
