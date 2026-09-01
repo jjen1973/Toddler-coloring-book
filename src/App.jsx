@@ -721,10 +721,6 @@ function StartPage({ onEnterTunnel }) {
 }
 
 const BALL_READY_ENABLED = true;
-const futureDoors = [
-  { label: 'Stories', icon: '★' },
-];
-
 const memoryPictures = [
   { value: 'parrot', picture: '🦜', label: 'Colorful parrot' },
   { value: 'fish', picture: '🐠', label: 'Tropical fish' },
@@ -903,11 +899,22 @@ const wafflesStoryPages = [
   },
 ];
 
+const tunnelSlots = Object.freeze({
+  outerLeft1: 'outer-left-1',
+  outerLeft2: 'outer-left-2',
+  outerRight1: 'outer-right-1',
+  outerRight2: 'outer-right-2',
+  deepLeft1: 'deep-left-1',
+  deepLeft2: 'deep-left-2',
+  deepRight1: 'deep-right-1',
+  deepRight2: 'deep-right-2',
+});
+
 const deepTunnelDoors = [
-  { id: 'deep-left-1', position: 1, activity: 'memory' },
-  { id: 'deep-left-2', position: 2, activity: 'books' },
-  { id: 'deep-right-2', position: 3, activity: 'locked' },
-  { id: 'deep-right-1', position: 4, activity: 'lily' },
+  { slot: tunnelSlots.deepLeft1, name: 'Deep Left 1', activity: 'memory' },
+  { slot: tunnelSlots.deepLeft2, name: 'Deep Left 2', activity: 'books' },
+  { slot: tunnelSlots.deepRight2, name: 'Deep Right 2', activity: 'locked' },
+  { slot: tunnelSlots.deepRight1, name: 'Deep Right 1', activity: 'lily' },
 ];
 
 function BooksPage({ onExit }) {
@@ -979,8 +986,57 @@ function BooksPage({ onExit }) {
   );
 }
 
-function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks, onGoHome }) {
+function PurchaseConfirmationDialog({ icon, title, message, confirmLabel, busy, onCancel, onConfirm }) {
+  return (
+    <div className="purchase-confirmation-backdrop" role="presentation">
+      <section className="purchase-confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="purchase-confirmation-title">
+        <span className="purchase-confirmation-icon" aria-hidden="true">{icon}</span>
+        <h2 id="purchase-confirmation-title">{title}</h2>
+        <p>{message}</p>
+        <div className="purchase-confirmation-actions">
+          <button type="button" onClick={onCancel} disabled={busy}>Not yet</button>
+          <button type="button" className="confirm" onClick={onConfirm} disabled={busy}>
+            {busy ? 'Unlocking...' : confirmLabel}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function TunnelPage({ family, onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks, onGoHome }) {
   const [deepTunnelStage, setDeepTunnelStage] = useState('waiting');
+  const [booksMessage, setBooksMessage] = useState('');
+  const [unlockingBooks, setUnlockingBooks] = useState(false);
+  const [confirmBooksPurchase, setConfirmBooksPurchase] = useState(false);
+  const booksUnlocked = (family?.child?.ownedItems || []).includes('books-tunnel');
+
+  const openOrUnlockBooks = async () => {
+    if (booksUnlocked) {
+      onOpenBooks();
+      return;
+    }
+    if ((family?.child?.carrots || 0) < 2) {
+      setBooksMessage('Earn 2 carrots to unlock Books.');
+      return;
+    }
+    setBooksMessage('');
+    setConfirmBooksPurchase(true);
+  };
+
+  const purchaseBooks = async () => {
+    setUnlockingBooks(true);
+    setBooksMessage('');
+    try {
+      await family.purchaseItem('books-tunnel', 2, 0);
+      setConfirmBooksPurchase(false);
+      onOpenBooks();
+    } catch (error) {
+      setBooksMessage(error.message || 'Books could not be unlocked yet.');
+    } finally {
+      setUnlockingBooks(false);
+    }
+  };
 
   useEffect(() => {
     if (deepTunnelStage !== 'traveling' && deepTunnelStage !== 'returning') return undefined;
@@ -1003,13 +1059,14 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks
         <h1>Pick a Tunnel</h1>
       </header>
       <section className="activity-doors" aria-label="Activity rabbit holes">
-        <button type="button" className="activity-door coloring-door" onClick={onOpenColoring}>
+        <button type="button" className="activity-door tunnel-entrance outer-tunnel-entrance tunnel-slot-outer-left-1 coloring-door" data-tunnel-name="Outer Left 1" onClick={onOpenColoring} aria-label="Enter Outer Left 1 to open the Coloring Book">
           <span className="door-icon" aria-hidden="true">📖</span>
           <strong>Coloring Book</strong>
           <span className="door-knob" aria-hidden="true" />
         </button>
         <a
-          className="activity-door watch-shows-door"
+          className="activity-door tunnel-entrance outer-tunnel-entrance tunnel-slot-outer-right-1 watch-shows-door"
+          data-tunnel-name="Outer Right 1"
           href="https://tubitv.com/category/preschool"
           target="_blank"
           rel="noopener noreferrer"
@@ -1020,22 +1077,18 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks
         </a>
         <button
           type="button"
-          className="activity-door memory-door"
+          className="activity-door tunnel-entrance outer-tunnel-entrance tunnel-slot-outer-left-2 memory-door"
+          data-tunnel-name="Outer Left 2"
           onClick={onOpenMemory}
-          aria-label="Enter left tunnel two to play Memory Match"
+          aria-label="Enter Outer Left 2 to play Memory Match"
         >
           <span className="memory-door-icon" aria-hidden="true">🧠</span>
           <strong>Memory</strong>
         </button>
-        {BALL_READY_ENABLED ? <button type="button" className="activity-door locked-door ball-ready-door" onClick={onOpenBallReady} aria-label="Enter right tunnel two to help Lily">
+        {BALL_READY_ENABLED ? <button type="button" className="activity-door tunnel-entrance outer-tunnel-entrance tunnel-slot-outer-right-2 locked-door ball-ready-door" data-tunnel-name="Outer Right 2" onClick={onOpenBallReady} aria-label="Enter Outer Right 2 to help Lily">
           <span className="door-lock" aria-hidden="true">👗</span>
           <strong>Help Lily</strong>
         </button> : null}
-        {futureDoors.map((door) => (
-          <button type="button" className="activity-door locked-door" key={door.label} disabled aria-label={`${door.label} activity locked`}>
-            <span className="door-lock" aria-hidden="true">&#128274;</span>
-          </button>
-        ))}
       </section>
       <button
         type="button"
@@ -1046,12 +1099,14 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks
       >
         <span>Go deeper!</span>
       </button>
-      <section className="deeper-door-locks" aria-label="Locked activity tunnels">
+      <section className="deeper-door-locks" aria-label="Activity tunnel entrances">
         {deepTunnelDoors.map((door) => door.activity === 'memory' ? (
           <button
             type="button"
-            className={`deeper-door-lock deeper-door-lock-${door.position} memory-tunnel-entrance`}
-            key={door.id}
+            className={`deeper-door-lock tunnel-entrance tunnel-slot-${door.slot} deep-activity-entrance memory-tunnel-entrance`}
+            key={door.slot}
+            data-tunnel-slot={door.slot}
+            data-tunnel-name={door.name}
             onClick={onOpenMemory}
             aria-label="Enter deep tunnel one on the left to play Memory Match"
           >
@@ -1061,19 +1116,25 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks
         ) : door.activity === 'books' ? (
           <button
             type="button"
-            className={`deeper-door-lock deeper-door-lock-${door.position} memory-tunnel-entrance books-tunnel-entrance`}
-            key={door.id}
-            onClick={onOpenBooks}
-            aria-label="Enter deep tunnel two on the left to choose a book"
+            className={`deeper-door-lock tunnel-entrance tunnel-slot-${door.slot} deep-activity-entrance books-tunnel-entrance${booksUnlocked ? '' : ' books-tunnel-locked'}`}
+            key={door.slot}
+            data-tunnel-slot={door.slot}
+            data-tunnel-name={door.name}
+            onClick={openOrUnlockBooks}
+            disabled={unlockingBooks}
+            aria-label={booksUnlocked ? 'Enter deep tunnel two on the left to choose a book' : 'Spend 2 carrots to unlock Books'}
           >
-            <span aria-hidden="true">&#128218;</span>
+            <span aria-hidden="true">{booksUnlocked ? '\uD83D\uDCDA' : '\uD83D\uDD12'}</span>
             <strong>Books</strong>
+            {!booksUnlocked ? <small className="books-unlock-cost">{'\uD83E\uDD55 2'}</small> : null}
           </button>
         ) : door.activity === 'lily' ? (
           <button
             type="button"
-            className={`deeper-door-lock deeper-door-lock-${door.position} ${door.id}-entrance memory-tunnel-entrance lily-tunnel-entrance`}
-            key={door.id}
+            className={`deeper-door-lock tunnel-entrance tunnel-slot-${door.slot} deep-activity-entrance lily-tunnel-entrance`}
+            key={door.slot}
+            data-tunnel-slot={door.slot}
+            data-tunnel-name={door.name}
             onClick={onOpenBallReady}
             aria-label="Enter the first deep tunnel on the right to help Lily"
           >
@@ -1083,15 +1144,29 @@ function TunnelPage({ onOpenColoring, onOpenMemory, onOpenBallReady, onOpenBooks
         ) : (
           <button
             type="button"
-            className={`deeper-door-lock deeper-door-lock-${door.position}`}
-            key={door.id}
+            className={`deeper-door-lock tunnel-entrance tunnel-slot-${door.slot}`}
+            key={door.slot}
+            data-tunnel-slot={door.slot}
+            data-tunnel-name={door.name}
             disabled
-            aria-label={`${door.id.replaceAll('-', ' ')} is locked`}
+            aria-label={`${door.name} tunnel entrance is locked`}
           >
             <span aria-hidden="true">&#128274;</span>
           </button>
         ))}
       </section>
+      {booksMessage ? <p className="deep-tunnel-message" role="status">{booksMessage}</p> : null}
+      {confirmBooksPurchase ? (
+        <PurchaseConfirmationDialog
+          icon="\uD83D\uDCDA"
+          title="Unlock Books?"
+          message="Spend 2 carrots?"
+          confirmLabel="\uD83E\uDD55 Spend 2"
+          busy={unlockingBooks}
+          onCancel={() => setConfirmBooksPurchase(false)}
+          onConfirm={purchaseBooks}
+        />
+      ) : null}
       {deepTunnelStage === 'revealed' ? (
         <button type="button" className="tunnel-back-one-button" onClick={() => setDeepTunnelStage('returning')}>
           <span aria-hidden="true">&#8617;</span> Back One Tunnel
@@ -1350,7 +1425,7 @@ function ToddlerApp({ family }) {
   };
 
   if (route === '/tunnel') {
-    return <TunnelPage onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onOpenBallReady={() => navigate('/ball-ready')} onOpenBooks={() => navigate('/books')} onGoHome={() => navigate('/')} />;
+    return <TunnelPage family={family} onOpenColoring={() => navigate('/coloring')} onOpenMemory={() => navigate('/memory')} onOpenBallReady={() => navigate('/ball-ready')} onOpenBooks={() => navigate('/books')} onGoHome={() => navigate('/')} />;
   }
 
   if (route === '/coloring') {

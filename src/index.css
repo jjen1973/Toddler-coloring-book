@@ -1402,10 +1402,61 @@ svg {
   transform: translate(-50%, -50%);
 }
 
-.deeper-door-lock-1 { left: 21%; top: 45%; }
-.deeper-door-lock-2 { left: 36%; top: 43%; transform: translate(-50%, -50%) scale(0.72); }
-.deeper-door-lock-3 { left: 64%; top: 43%; transform: translate(-50%, -50%) scale(0.72); }
-.deeper-door-lock-4 { left: 79%; top: 45%; }
+.tunnel-slot-deep-left-1 { left: 21%; top: 45%; }
+.tunnel-slot-deep-left-2 { left: 36%; top: 43%; transform: translate(-50%, -50%) scale(0.72); }
+.tunnel-slot-deep-right-2 { left: 64%; top: 43%; transform: translate(-50%, -50%) scale(0.72); }
+.tunnel-slot-deep-right-1 { left: 79%; top: 45%; }
+
+/* Permanent, non-overlapping hitboxes approved using the temporary egg view. */
+.deeper-door-locks .tunnel-entrance.tunnel-slot-deep-left-1 {
+  left: 21%;
+  top: 45%;
+  width: 12%;
+  height: 76%;
+  transform: translate(-50%, -50%);
+}
+
+.deeper-door-locks .tunnel-entrance.tunnel-slot-deep-left-2 {
+  left: 36%;
+  top: 43%;
+  width: 8%;
+  height: 46%;
+  transform: translate(-50%, -50%) scale(.72);
+}
+
+.deeper-door-locks .tunnel-entrance.tunnel-slot-deep-right-2 {
+  left: 64%;
+  top: 43%;
+  width: 7%;
+  height: 38%;
+  transform: translate(-50%, -50%) scale(.72);
+}
+
+.deeper-door-locks .tunnel-entrance.tunnel-slot-deep-right-1 {
+  left: 79%;
+  top: 45%;
+  width: 12%;
+  height: 76%;
+  transform: translate(-50%, -50%);
+}
+
+.deep-tunnel-revealed .tunnel-slot-deep-right-2 {
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .deeper-door-locks .tunnel-entrance.memory-tunnel-entrance:hover,
+  .deeper-door-locks .tunnel-entrance.memory-tunnel-entrance:focus-visible,
+  .deeper-door-locks .tunnel-entrance.lily-tunnel-entrance:hover,
+  .deeper-door-locks .tunnel-entrance.lily-tunnel-entrance:focus-visible {
+    transform: translate(-50%, calc(-50% - 7px));
+  }
+
+  .deeper-door-locks .tunnel-slot-deep-right-2:hover {
+    transform: translate(-50%, calc(-50% - 7px)) scale(.72);
+  }
+}
 
 .tunnel-back-one-button {
   position: absolute;
@@ -1627,9 +1678,14 @@ svg {
     box-shadow: 3px 5px 7px rgba(0, 0, 0, 0.45);
   }
 
-  .activity-doors > .activity-door:nth-child(2) { left: 75%; top: 28%; width: 20%; height: 48%; }
-  .activity-doors > .activity-door:nth-child(3) { left: 33%; top: 39%; width: 9%; height: 27%; }
-  .activity-doors > .activity-door:nth-child(4) { right: 33%; top: 39%; width: 9%; height: 27%; }
+  .activity-doors > .tunnel-slot-outer-left-1 { left: 5.5%; right: auto; top: 28%; width: 20%; height: 48%; }
+  .activity-doors > .tunnel-slot-outer-left-2 { left: 33%; right: auto; top: 39%; width: 9%; height: 27%; }
+  .activity-doors > .tunnel-slot-outer-right-1 { left: 75%; right: auto; top: 28%; width: 20%; height: 48%; }
+  .activity-doors > .tunnel-slot-outer-right-2 { left: auto; right: 33%; top: 39%; width: 9%; height: 27%; }
+
+  .activity-doors > .outer-tunnel-entrance > * {
+    pointer-events: none;
+  }
   .activity-doors > .watch-shows-door {
     z-index: 5;
     color: #fff4c9;
@@ -1713,8 +1769,8 @@ svg {
     font-size: clamp(2.5rem, 5vw, 5rem);
     filter: drop-shadow(0 5px 4px rgba(0, 0, 0, 0.65));
   }
-  .activity-doors > .activity-door:nth-child(3) .door-lock,
-  .activity-doors > .activity-door:nth-child(4) .door-lock { font-size: clamp(1.4rem, 2.6vw, 2.8rem); }
+  .activity-doors > .tunnel-slot-outer-left-2 .door-lock,
+  .activity-doors > .tunnel-slot-outer-right-2 .door-lock { font-size: clamp(1.4rem, 2.6vw, 2.8rem); }
   .activity-doors .door-knob { display: none; }
   .coloring-door:hover { transform: translateY(-5px) scale(1.025); filter: brightness(1.12); }
 }
@@ -1997,9 +2053,9 @@ svg {
     border-width: 2px;
   }
 
-  .deeper-door-lock-2 { left: 36.5vw; top: 26vw; }
-  .deeper-door-lock-3 { left: 63.5vw; top: 26vw; }
-  .deeper-door-lock-4 { left: 79vw; top: 27vw; }
+  .tunnel-slot-deep-left-2 { left: 36.5vw; top: 26vw; }
+  .tunnel-slot-deep-right-2 { left: 63.5vw; top: 26vw; }
+  .tunnel-slot-deep-right-1 { left: 79vw; top: 27vw; }
 
   .tunnel-home-button {
     top: 8px;
@@ -2191,11 +2247,11 @@ svg {
   cursor: pointer;
 }
 
-.memory-tunnel-entrance {
+.deep-activity-entrance {
   left: 21%;
   top: 45%;
-  width: 16%;
-  height: 42%;
+  width: 10%;
+  height: 32%;
   pointer-events: none;
   cursor: pointer;
   border: 0;
@@ -2205,11 +2261,11 @@ svg {
   transform: translate(-50%, -50%);
 }
 
-.deep-right-1-entrance.lily-tunnel-entrance {
+.tunnel-slot-deep-right-1.lily-tunnel-entrance {
   left: 79%;
   top: 45%;
-  width: 10%;
-  height: 32%;
+  width: 12%;
+  height: 76%;
   transform: translate(-50%, -50%);
 }
 
@@ -2236,11 +2292,11 @@ svg {
   pointer-events: none;
 }
 
-.deep-tunnel-revealed .memory-tunnel-entrance {
+.deep-tunnel-revealed .deep-activity-entrance {
   pointer-events: auto;
 }
 
-.memory-tunnel-entrance > span {
+.deep-activity-entrance > span {
   position: absolute;
   z-index: 3;
   left: 78%;
@@ -2250,7 +2306,7 @@ svg {
   transform: translate(-50%, -50%);
 }
 
-.memory-tunnel-entrance strong {
+.deep-activity-entrance strong {
   position: absolute;
   z-index: 2;
   top: 79%;
@@ -2273,29 +2329,154 @@ svg {
   white-space: nowrap;
 }
 
+/* Portraits, icons, labels, and old decorative posts can overflow visually.
+   They must never extend an activity's clickable area into a neighboring door. */
+.deep-activity-entrance > span,
+.deep-activity-entrance > strong,
+.deep-activity-entrance::after {
+  pointer-events: none;
+}
+
+/* Child buttons set pointer-events:auto in their base styles, so disabling the
+   outer container alone is not enough after the camera travels deeper. */
+.deep-tunnel-traveling .activity-doors > .activity-door,
+.deep-tunnel-revealed .activity-doors > .activity-door,
+.deep-tunnel-returning .activity-doors > .activity-door {
+  pointer-events: none;
+}
+
 /* Books belongs to the smaller second opening on the left, not Memory's first opening. */
-.memory-tunnel-entrance.books-tunnel-entrance {
+.deep-activity-entrance.books-tunnel-entrance {
   left: 36%;
   top: 43%;
   transform: translate(-50%, -50%) scale(.72);
 }
 
+.books-tunnel-locked > span {
+  color: #ffe66d;
+  font-size: clamp(1.45rem, 3vw, 2.5rem);
+  top: 26%;
+}
+
+.books-tunnel-locked > strong {
+  color: #fff4c9;
+  top: 55%;
+}
+
+.books-unlock-cost {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 68%;
+  width: max-content;
+  padding: 3px 8px;
+  border: 2px solid #f3d36b;
+  border-radius: 999px;
+  background: rgba(48, 25, 12, .92);
+  color: #ffeaa0;
+  font-size: clamp(.55rem, .9vw, .8rem);
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+
+.deep-tunnel-message {
+  position: absolute;
+  z-index: 24;
+  left: 50%;
+  bottom: 12%;
+  margin: 0;
+  padding: .65rem 1rem;
+  border: 3px solid #6b3da3;
+  border-radius: 999px;
+  background: #fff8dc;
+  color: #4b2c1d;
+  font-weight: 900;
+  transform: translateX(-50%);
+}
+
+.purchase-confirmation-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 8, 3, .58);
+}
+
+.purchase-confirmation-dialog {
+  width: min(88vw, 390px);
+  padding: clamp(20px, 4vw, 32px);
+  border: 5px solid #f1c95f;
+  border-radius: 26px;
+  background: #fff7d7;
+  color: #4b2c1d;
+  text-align: center;
+  box-shadow: 0 18px 45px rgba(25, 10, 3, .58);
+}
+
+.purchase-confirmation-icon {
+  display: block;
+  font-size: clamp(3rem, 9vw, 5rem);
+}
+
+.purchase-confirmation-dialog h2 {
+  margin: 4px 0 8px;
+  font-size: clamp(1.5rem, 5vw, 2.4rem);
+}
+
+.purchase-confirmation-dialog p {
+  margin: 0 0 20px;
+  font-size: clamp(1.2rem, 4vw, 1.8rem);
+  font-weight: 900;
+}
+
+.purchase-confirmation-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.purchase-confirmation-actions button {
+  padding: 11px 16px;
+  border: 3px solid #6b3da3;
+  border-radius: 999px;
+  background: #fff;
+  color: #563183;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.purchase-confirmation-actions button.confirm {
+  border-color: #9b5c18;
+  background: #ffd75e;
+  color: #4b2c1d;
+}
+
+.purchase-confirmation-actions button:disabled {
+  cursor: wait;
+  opacity: .6;
+}
+
 @media (hover: hover) {
-  .memory-tunnel-entrance.books-tunnel-entrance:hover,
-  .memory-tunnel-entrance.books-tunnel-entrance:focus-visible {
+  .deep-activity-entrance.books-tunnel-entrance:hover,
+  .deep-activity-entrance.books-tunnel-entrance:focus-visible {
     transform: translate(-50%, calc(-50% - 5px)) scale(.76);
   }
 }
 
 @media (max-width: 620px) {
-  .memory-tunnel-entrance.books-tunnel-entrance {
+  .deep-activity-entrance.books-tunnel-entrance {
     left: 36.5vw;
     top: 26vw;
-    width: 16vw;
-    height: 28vw;
+    width: 10vw;
+    height: 22vw;
   }
 
-  .memory-tunnel-entrance.deep-right-1-entrance.lily-tunnel-entrance {
+  .deep-activity-entrance.tunnel-slot-deep-right-1.lily-tunnel-entrance {
     left: 79vw;
     top: 27vw;
     width: 10vw;
@@ -2483,7 +2664,7 @@ svg {
 }
 
 /* Reuse the original Help Lily portrait marker in the first deep-right tunnel. */
-.memory-tunnel-entrance.lily-tunnel-entrance > span {
+.deep-activity-entrance.lily-tunnel-entrance > span {
   display: block;
   left: 50%;
   top: 35%;
@@ -2501,7 +2682,7 @@ svg {
   filter: none;
 }
 
-.memory-tunnel-entrance::after {
+.deep-activity-entrance::after {
   content: '';
   position: absolute;
   z-index: 1;
@@ -2517,7 +2698,6 @@ svg {
 
 .activity-doors > .memory-door {
   z-index: 6;
-  left: 27%;
   color: #fff;
   background: transparent;
   box-shadow: none;
@@ -2581,9 +2761,9 @@ svg {
     filter: none;
   }
 
-  .memory-tunnel-entrance:hover,
-  .memory-tunnel-entrance:focus-visible {
-    transform: translate(-50%, calc(-50% - 5px)) scale(1.025);
+  .deep-activity-entrance:hover,
+  .deep-activity-entrance:focus-visible {
+    transform: translate(-50%, calc(-50% - 5px));
   }
 }
 
@@ -2607,19 +2787,17 @@ svg {
     font-size: clamp(0.48rem, 1.8vw, 0.68rem);
   }
 
-  .memory-tunnel-entrance > span {
+  .deep-activity-entrance > span {
     font-size: clamp(0.62rem, 2.4vw, 0.9rem);
   }
 
-  .memory-tunnel-entrance strong {
+  .deep-activity-entrance strong {
     font-size: clamp(0.5rem, 1.9vw, 0.72rem);
   }
 
-  .memory-tunnel-entrance {
-    left: 21vw;
-    top: 26vw;
-    width: 16vw;
-    height: 28vw;
+  .deep-activity-entrance {
+    width: 10vw;
+    height: 24vw;
   }
 }
 /* Parent login, child profiles, and synced currency */
@@ -3087,14 +3265,20 @@ svg {
 
 .activity-doors > .ball-ready-door .door-lock {
   top: 24%;
+  transition: transform .2s ease;
+}
+
+.activity-doors > .ball-ready-door:hover .door-lock,
+.activity-doors > .ball-ready-door:focus-visible .door-lock {
+  transform: translate(-50%, calc(-50% - 7px));
 }
 
 /* Match the deeper Memory entrance to the icon-only tunnel markers. */
-.memory-tunnel-entrance::after {
+.deep-activity-entrance::after {
   display: none;
 }
 
-.memory-tunnel-entrance > span {
+.deep-activity-entrance > span {
   position: absolute;
   left: 50%;
   top: 35%;
@@ -3103,7 +3287,7 @@ svg {
   transform: translate(-50%, -50%);
 }
 
-.memory-tunnel-entrance strong {
+.deep-activity-entrance strong {
   position: absolute;
   left: 50%;
   top: 53%;
@@ -3124,6 +3308,7 @@ svg {
   transform: translateX(-50%);
   white-space: nowrap;
 }
+
 .wash-face-action { position: absolute; z-index: 4; left: 49%; top: 26%; width: 170px; height: 145px; pointer-events: none; transform: translate(-50%, -50%); }
 .wash-face-action strong { position: absolute; left: 50%; top: -32px; width: max-content; padding: 6px 10px; border-radius: 999px; background: white; color: #65417a; transform: translateX(-50%); }
 .wash-rag { position: absolute; z-index: 2; left: 50%; top: 50%; font-size: 3.4rem; animation: wash-rag-scrub .42s ease-in-out infinite alternate; }
@@ -3142,7 +3327,7 @@ svg {
 
 /* Keep the named Books entrance on deep-left-2 after all shared Memory rules. */
 @media (max-width: 620px) {
-  .memory-tunnel-entrance.books-tunnel-entrance {
+  .deep-activity-entrance.books-tunnel-entrance {
     left: 36.5vw;
     top: 26vw;
     transform: translate(-50%, -50%) scale(.72);
