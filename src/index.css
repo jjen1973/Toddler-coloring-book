@@ -2594,6 +2594,48 @@ svg {
   font-size: clamp(1.15rem, 3vw, 2rem);
 }
 
+.book-series-count {
+  position: absolute;
+  z-index: 2;
+  top: .8rem;
+  left: 50%;
+  padding: .45rem .9rem;
+  border: 3px solid #fff5bc;
+  border-radius: 999px;
+  background: rgba(79, 52, 139, .94);
+  color: #fff;
+  font-size: clamp(.85rem, 1.8vw, 1.1rem);
+  font-weight: 900;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 8px rgba(45, 23, 17, .3);
+}
+
+.waffles-pip-book-choices {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 760px);
+}
+
+.waffles-pip-book-choices .book-picture-choice strong {
+  bottom: 4.1rem;
+}
+
+.waffles-pip-book-choices .book-picture-choice small {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  padding: .55rem .75rem;
+  border-radius: 18px;
+  background: rgba(75, 44, 29, .9);
+  color: #fff8da;
+  font-size: clamp(.82rem, 1.8vw, 1.05rem);
+  font-weight: 900;
+}
+
+.series-book-coming-soon { cursor: not-allowed; }
+.series-book-coming-soon img { opacity: .82; }
+
 .locked-book-choice {
   display: grid;
   place-items: center;

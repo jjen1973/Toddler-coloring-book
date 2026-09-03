@@ -899,6 +899,85 @@ const wafflesStoryPages = [
   },
 ];
 
+const acornEmergencyStoryPages = [
+  {
+    image: '/pages/waffles-book-2/acorn-bonks.png',
+    alt: 'Falling acorns surprise Waffles while Pip laughs beneath the oak tree',
+    text: 'Pip woke with a feeling that something was wrong. BONK! An acorn landed on Waffles’ head. Then another bounced off his bottom. Pip laughed so hard she fell from her branch. Waffles glared up. “This tree has declared war.”',
+  },
+  {
+    image: '/pages/waffles-book-2/leaf-carrier.png',
+    alt: 'Pip pulls and Waffles pushes a giant leaf loaded with acorns',
+    text: 'Acorns covered the path, the bushes, and even Waffles’ head. “We have an acorn emergency,” he announced. To stop anyone else from getting bonked, Pip and Waffles piled the acorns onto a giant leaf. Pip pulled. Waffles pushed. The heavy leaf moved one tiny inch.',
+  },
+  {
+    image: '/pages/waffles-book-2/leaf-rip.png',
+    alt: 'The giant leaf tears and sends acorns flying into a puddle and bushes',
+    text: 'They pulled harder. They pushed harder. Then—RIIIIIP! The leaf tore in half and acorns flew everywhere. One went PLOP into a puddle. One went POOF into a bush. One landed between Waffles’ ears. “Do not laugh,” he told Pip. She laughed anyway—and soon Waffles did too.',
+  },
+  {
+    image: '/pages/waffles-book-2/meet-squirrel.png',
+    alt: 'Waffles and Pip apologize to a worried squirrel beside his scattered acorns',
+    text: 'A tiny voice said, “Excuse me!” A squirrel popped out from behind the log and stared at the mess. They were his winter acorns! Waffles whispered, “We may have made the emergency worse.” Pip promised they could fix it. “We are excellent fixers,” said Waffles. “We are... acceptable fixers,” said Pip.',
+  },
+  {
+    image: '/pages/waffles-book-2/acorn-pile.png',
+    alt: 'Pip, Waffles, and their squirrel friend happily rebuild the acorn pile',
+    text: 'The three friends gathered every acorn. Pip searched from above, the squirrel carried them in his cheeks, and Waffles pushed them with his nose. At last, the winter pile was perfect. Then—BONK! One more acorn landed on Waffles. Pip led everyone away to find dinner while Waffles kept a very close eye on that tree.',
+  },
+];
+
+// Book collection map: add future Waffles and Pip releases to `books` below.
+// A book becomes readable when `readerKey` matches an entry in storyBooksById.
+const storyBooksById = {
+  tookie: {
+    title: 'Tookie the Babysitter Cat',
+    cover: '/pages/tookie-book/cover.png',
+    pages: tookieStoryPages,
+  },
+  'waffles-and-pip-1': {
+    title: 'Waffles the White Rabbit and the Very Suspicious Berry',
+    cover: '/pages/waffles-book/cover.png',
+    pages: wafflesStoryPages,
+  },
+  'waffles-and-pip-2': {
+    title: 'Pip and Waffles and the Great Acorn Emergency',
+    cover: '/pages/waffles-book-2/cover.png',
+    pages: acornEmergencyStoryPages,
+  },
+};
+
+const bookCollections = {
+  wafflesAndPip: {
+    id: 'waffles-and-pip',
+    title: 'Waffles and Pip',
+    shelfTitle: 'Waffles and Pip Adventures',
+    artwork: '/pages/waffles-book/waffles-pip-adventures.png',
+    artworkAlt: 'Waffles the white rabbit and Pip the blue bird',
+    books: [
+      {
+        id: 'waffles-and-pip-book-1',
+        number: 1,
+        title: 'The Very Suspicious Berry',
+        cover: '/pages/waffles-book/cover.png',
+        coverAlt: 'Waffles and Pip beside a suspicious berry',
+        readerKey: 'waffles-and-pip-1',
+        available: true,
+      },
+      {
+        id: 'waffles-and-pip-book-2',
+        number: 2,
+        title: 'The Great Acorn Emergency',
+        cover: '/pages/waffles-book-2/cover.png',
+        coverAlt: 'Waffles the white rabbit and Pip the blue bird in the forest',
+        manuscript: '/content/pip-and-waffles/great-acorn-emergency.txt',
+        readerKey: 'waffles-and-pip-2',
+        available: true,
+      },
+    ],
+  },
+};
+
 const tunnelSlots = Object.freeze({
   outerLeft1: 'outer-left-1',
   outerLeft2: 'outer-left-2',
@@ -919,14 +998,15 @@ const deepTunnelDoors = [
 
 function BooksPage({ onExit }) {
   const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedSeries, setSelectedSeries] = useState(null);
   const [pageIndex, setPageIndex] = useState(-1);
   const [message, setMessage] = useState('');
 
   if (selectedBook) {
-    const isWaffles = selectedBook === 'waffles';
-    const storyPages = isWaffles ? wafflesStoryPages : tookieStoryPages;
-    const cover = isWaffles ? '/pages/waffles-book/cover.png' : '/pages/tookie-book/cover.png';
-    const title = isWaffles ? 'Waffles the White Rabbit and the Very Suspicious Berry' : 'Tookie the Babysitter Cat';
+    const book = storyBooksById[selectedBook];
+    const storyPages = book.pages;
+    const cover = book.cover;
+    const title = book.title;
     const isCover = pageIndex < 0;
     const page = storyPages[Math.max(0, pageIndex)];
     return (
@@ -961,6 +1041,37 @@ function BooksPage({ onExit }) {
     );
   }
 
+  if (selectedSeries) {
+    const collection = Object.values(bookCollections).find((item) => item.id === selectedSeries);
+    return (
+      <main className="books-choice-page">
+        <button type="button" className="story-back-button" onClick={() => { setSelectedSeries(null); setMessage(''); }}>
+          <span aria-hidden="true">&#8617;</span> All Books
+        </button>
+        <header>
+          <p>Adventure Books</p>
+          <h1>{collection.title}</h1>
+        </header>
+        <section className="book-picture-choices waffles-pip-book-choices" aria-label="Choose a Waffles and Pip adventure">
+          {collection.books.map((book) => (
+            <button
+              type="button"
+              className={`book-picture-choice ${book.available ? '' : 'series-book-coming-soon'}`}
+              key={book.id}
+              disabled={!book.available}
+              onClick={() => { setSelectedBook(book.readerKey); setPageIndex(-1); }}
+              aria-label={`${book.available ? 'Open' : 'Coming soon:'} ${collection.title} Book ${book.number}, ${book.title}`}
+            >
+              <img src={book.cover} alt={book.coverAlt} />
+              <strong>Book {book.number}</strong>
+              <small>{book.title}{book.available ? '' : ' — Coming Soon'}</small>
+            </button>
+          ))}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="books-choice-page">
       <button type="button" className="story-back-button" onClick={onExit}><span aria-hidden="true">&#8617;</span> Tunnel</button>
@@ -973,9 +1084,10 @@ function BooksPage({ onExit }) {
           <img src="/pages/tookie-book/cover.png" alt="Orange cat" />
           <strong>Cat</strong>
         </button>
-        <button type="button" className="book-picture-choice" onClick={() => setSelectedBook('waffles')}>
-          <img src="/pages/waffles-book/cover.png" alt="Waffles the white rabbit" />
-          <strong>Rabbit</strong>
+        <button type="button" className="book-picture-choice" onClick={() => setSelectedSeries(bookCollections.wafflesAndPip.id)} aria-label={`Open ${bookCollections.wafflesAndPip.shelfTitle}`}>
+          <span className="book-series-count">{bookCollections.wafflesAndPip.books.length}-Book Series</span>
+          <img src={bookCollections.wafflesAndPip.artwork} alt={bookCollections.wafflesAndPip.artworkAlt} />
+          <strong>{bookCollections.wafflesAndPip.shelfTitle}</strong>
         </button>
         <button type="button" className="book-picture-choice locked-book-choice" disabled aria-label="Locked book">
           <span aria-hidden="true">&#128274;</span>
